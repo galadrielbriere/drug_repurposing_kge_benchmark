@@ -1,0 +1,1 @@
+python /home/galadriel/dr_benchmark/dev/run_training.py --config /home/galadriel/dr_benchmark/processed_kgs/full_kg/mixed_test/permuted/params.yaml 2>&1 | tee /home/galadriel/dr_benchmark/processed_kgs/full_kg/mixed_test/permuted/out.log

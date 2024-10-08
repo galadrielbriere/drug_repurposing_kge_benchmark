@@ -1,0 +1,4 @@
+dev/__pycache__/
+knowledge_graph/
+processed_kgs/**/kg.pkl
+raw_data/

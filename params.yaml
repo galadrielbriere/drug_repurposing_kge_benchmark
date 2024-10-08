@@ -1,0 +1,71 @@
+common:
+  seed: 42
+  input_csv: "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
+  # input_pkl: 
+  out: "./"
+  verbose: true
+  run_kg_prep: true
+  run_training: false
+  run_evaluation: false
+
+clean_kg:   
+  remove_duplicates_triplets: true 
+
+  make_directed: true
+  make_directed_params: 
+    - "disease_disease"
+    - "drug_drug"
+    - "protein_protein"
+
+  check_synonymous_antisynonymous: true 
+  check_synonymous_antisynonymous_params:
+    theta1: 0.8
+    theta2: 0.8
+
+  permute_kg: false
+
+  clean_train_set: true
+  compute_proportions: true
+
+  rel_swap: false # to set orpha_treatment to indication
+
+  mixed_test: true
+
+  smaller_kg: true
+  keep_relations:
+    - 'disease_disease'
+    - 'protein_protein'
+    - 'drug_drug'
+    - 'phenotype_phenotype'
+    - 'disease_protein'
+    - 'indication'
+    - 'disease_phenotype_positive'
+    - 'disease_phenotype_negative'
+    - 'drug_protein'
+    - 'orpha_treatment'
+
+model:
+  name: "TransE"               
+  emb_dim: 400
+  margin: 1                  
+
+sampler:
+  name: 'Positional'
+
+optimizer:
+  name: "Adam"
+  params:
+    weight_decay: 0.001                        
+
+lr_scheduler:
+  type: "CosineAnnealingWarmRestarts"
+  params:
+    T_0: 10
+    T_mult: 2         
+
+training:
+  max_epochs: 2000              
+  patience: 20            
+  batch_size: 2048     
+  eval_interval: 10
+  eval_batch_size: 32

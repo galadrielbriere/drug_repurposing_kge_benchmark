@@ -1,0 +1,108 @@
+/home/galadriel/anaconda3/envs/benchmark/lib/python3.9/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+2024-10-08 14:27:49,448 - root - INFO - Configuration loaded:
+{
+    "common": {
+        "seed": 42,
+        "input_csv": "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv",
+        "out": "/home/galadriel/dr_benchmark/processed_kgs/minimal_kg/mixed_test/permuted",
+        "run_kg_prep": true,
+        "run_training": false,
+        "run_evaluation": false
+    },
+    "clean_kg": {
+        "remove_duplicates_triplets": true,
+        "make_directed": true,
+        "make_directed_params": [
+            "disease_disease",
+            "drug_drug",
+            "protein_protein"
+        ],
+        "check_synonymous_antisynonymous": true,
+        "check_synonymous_antisynonymous_params": {
+            "theta1": 0.8,
+            "theta2": 0.8
+        },
+        "permute_kg": true,
+        "permute_kg_params": [
+            "indication"
+        ],
+        "clean_train_set": true,
+        "compute_proportions": true,
+        "rel_swap": false,
+        "mixed_test": true,
+        "smaller_kg": true,
+        "keep_relations": [
+            "disease_disease",
+            "protein_protein",
+            "drug_drug",
+            "phenotype_phenotype",
+            "disease_protein",
+            "indication",
+            "disease_phenotype_positive",
+            "disease_phenotype_negative",
+            "drug_protein",
+            "orpha_treatment"
+        ]
+    }
+}
+2024-10-08 14:27:49,448 - root - INFO - Setting number of threads to 20
+2024-10-08 14:27:49,468 - root - INFO - Loading parameters from /home/galadriel/dr_benchmark/processed_kgs/minimal_kg/mixed_test/permuted/params.yaml
+2024-10-08 14:27:49,468 - root - INFO - Output folder: /home/galadriel/dr_benchmark/processed_kgs/minimal_kg/mixed_test/permuted
+2024-10-08 14:27:49,468 - root - INFO - Preparing KG...
+2024-10-08 14:27:57,815 - py.warnings - WARNING - /home/galadriel/dr_benchmark/dev/kg_processing.py:97: DtypeWarning: Columns (2,6) have mixed types. Specify dtype option on import or set low_memory=False.
+  kg_df = pd.read_csv(input_file, sep="\t")[["my_x_id", "my_y_id", "relation"]]
+
+2024-10-08 14:27:58,720 - root - INFO - Keeping only relations ['disease_disease', 'protein_protein', 'drug_drug', 'phenotype_phenotype', 'disease_protein', 'indication', 'disease_phenotype_positive', 'disease_phenotype_negative', 'drug_protein', 'orpha_treatment']
+2024-10-08 14:29:03,447 - root - INFO - Removing duplicated triplets...
+  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:00<00:01,  7.39it/s] 33%|███▎      | 3/9 [00:00<00:01,  3.85it/s]2024-10-08 14:29:04,435 - root - INFO - 52 duplicates found. Keeping 86247 unique triplets for relation 3
+ 44%|████▍     | 4/9 [00:00<00:01,  3.93it/s]2024-10-08 14:29:11,896 - root - INFO - 1336314 duplicates found. Keeping 1336314 unique triplets for relation 4
+ 56%|█████▌    | 5/9 [00:08<00:10,  2.64s/it]2024-10-08 14:29:12,082 - root - INFO - 185 duplicates found. Keeping 25468 unique triplets for relation 5
+ 67%|██████▋   | 6/9 [00:08<00:05,  1.85s/it] 78%|███████▊  | 7/9 [00:09<00:02,  1.42s/it]2024-10-08 14:29:13,021 - root - INFO - 16 duplicates found. Keeping 21909 unique triplets for relation 7
+ 89%|████████▉ | 8/9 [00:09<00:01,  1.12s/it]100%|██████████| 9/9 [00:11<00:00,  1.26s/it]100%|██████████| 9/9 [00:11<00:00,  1.24s/it]
+2024-10-08 14:29:14,603 - root - INFO - Checking for synonymous and antisynonymous relations...
+  0%|          | 0/9 [00:00<?, ?it/s] 11%|█         | 1/9 [00:01<00:10,  1.37s/it] 22%|██▏       | 2/9 [00:01<00:04,  1.42it/s] 33%|███▎      | 3/9 [00:03<00:08,  1.46s/it] 44%|████▍     | 4/9 [00:04<00:06,  1.25s/it] 56%|█████▌    | 5/9 [00:23<00:29,  7.34s/it] 67%|██████▋   | 6/9 [00:23<00:14,  5.00s/it] 78%|███████▊  | 7/9 [00:23<00:06,  3.40s/it] 89%|████████▉ | 8/9 [00:23<00:02,  2.39s/it]100%|██████████| 9/9 [00:27<00:00,  2.71s/it]100%|██████████| 9/9 [00:27<00:00,  3.02s/it]
+2024-10-08 14:29:41,825 - root - INFO - Finding duplicate relations
+  0%|          | 0/36 [00:00<?, ?it/s] 56%|█████▌    | 20/36 [00:00<00:00, 192.27it/s]100%|██████████| 36/36 [00:00<00:00, 130.68it/s]
+2024-10-08 14:29:42,101 - root - INFO - Duplicate relations: 0
+2024-10-08 14:29:42,101 - root - INFO - Reverse duplicate relations: 0
+
+2024-10-08 14:29:42,703 - root - INFO - Making permutations for relation indication with id 6.
+2024-10-08 14:29:53,744 - root - INFO - Adding reverse triplets for relations disease_disease, drug_drug, protein_protein...
+2024-10-08 14:29:53,767 - root - INFO - Adding created reverses ['disease_disease', 'drug_drug', 'protein_protein'] to the list of known duplicated relations.
+2024-10-08 14:29:53,767 - root - INFO - Splitting the dataset into train, validation and test sets...
+2024-10-08 14:31:36,413 - root - INFO - Entity coverage verified successfully.
+2024-10-08 14:31:36,413 - root - INFO - Cleaning the train set to avoid data leakage...
+2024-10-08 14:31:36,413 - root - INFO - Step 1: with respect to validation set.
+2024-10-08 14:31:36,413 - root - INFO - Processing relation pair: (0, 9)
+2024-10-08 14:32:05,446 - root - INFO - Found 2800 triplets to remove for relation 9 with reverse 0.
+2024-10-08 14:32:31,890 - root - INFO - Found 2801 reverse triplets to remove for relation 0 with reverse 9.
+2024-10-08 14:32:31,890 - root - INFO - Processing relation pair: (4, 10)
+2024-10-08 14:32:59,104 - root - INFO - Found 106958 triplets to remove for relation 10 with reverse 4.
+2024-10-08 14:33:26,801 - root - INFO - Found 106828 reverse triplets to remove for relation 4 with reverse 10.
+2024-10-08 14:33:26,801 - root - INFO - Processing relation pair: (8, 11)
+2024-10-08 14:33:53,296 - root - INFO - Found 25605 triplets to remove for relation 11 with reverse 8.
+2024-10-08 14:34:18,473 - root - INFO - Found 25538 reverse triplets to remove for relation 8 with reverse 11.
+2024-10-08 14:34:18,481 - root - INFO - Step 2: with respect to test set.
+2024-10-08 14:34:18,481 - root - INFO - Processing relation pair: (0, 9)
+2024-10-08 14:34:42,646 - root - INFO - Found 2820 triplets to remove for relation 9 with reverse 0.
+2024-10-08 14:35:08,198 - root - INFO - Found 2819 reverse triplets to remove for relation 0 with reverse 9.
+2024-10-08 14:35:08,199 - root - INFO - Processing relation pair: (4, 10)
+2024-10-08 14:35:33,645 - root - INFO - Found 107076 triplets to remove for relation 10 with reverse 4.
+2024-10-08 14:35:59,778 - root - INFO - Found 107206 reverse triplets to remove for relation 4 with reverse 10.
+2024-10-08 14:35:59,779 - root - INFO - Processing relation pair: (8, 11)
+2024-10-08 14:36:22,648 - root - INFO - Found 25667 triplets to remove for relation 11 with reverse 8.
+2024-10-08 14:36:46,174 - root - INFO - Found 25734 reverse triplets to remove for relation 8 with reverse 11.
+2024-10-08 14:36:46,800 - root - INFO - Entity coverage verification failed...
+2024-10-08 14:36:47,024 - root - INFO - Total entities in full kg: 64057
+2024-10-08 14:36:47,024 - root - INFO - Entities present in kg_train: 62157
+2024-10-08 14:36:47,024 - root - INFO - Missing entities in kg_train: 1900
+2024-10-08 14:36:47,092 - root - INFO - Warning: No triplet found involving entity '13' in kg_val or kg_test. Entity remains unconnected in kg_train.
+2024-10-08 14:36:48,003 - root - INFO - Warning: No triplet found involving entity '360' in kg_val or kg_test. Entity remains unconnected in kg_train.
+2024-10-08 14:36:49,857 - root - INFO - Warning: No triplet found involving entity '9053' in kg_val or kg_test. Entity remains unconnected in kg_train.
+2024-10-08 14:37:06,283 - root - INFO - Warning: No triplet found involving entity '10618' in kg_val or kg_test. Entity remains unconnected in kg_train.
+2024-10-08 14:37:24,976 - root - INFO - Warning: No triplet found involving entity '10819' in kg_val or kg_test. Entity remains unconnected in kg_train.
+2024-10-08 14:43:31,467 - root - INFO - Entity coverage verified successfully.
+2024-10-08 14:43:31,467 - root - INFO - Computing triplet proportions...
+2024-10-08 14:43:31,505 - root - INFO - {0: {'train': 0.767148319853812, 'test': 0.11667963859091063, 'val': 0.11617204155527731}, 1: {'train': 0.8010788941335132, 'test': 0.100472016183412, 'val': 0.09844908968307485}, 2: {'train': 0.8004063174550462, 'test': 0.09979684127247687, 'val': 0.09979684127247687}, 3: {'train': 0.8005727735457465, 'test': 0.09963245098380233, 'val': 0.09979477547045115}, 4: {'train': 0.761858894393556, 'test': 0.1190701072816053, 'val': 0.11907099832483872}, 5: {'train': 0.8218941416679755, 'test': 0.08924925396576096, 'val': 0.08885660436626355}, 6: {'train': 0.8013594281026603, 'test': 0.09914449783194657, 'val': 0.09949607406539318}, 7: {'train': 0.8355013921219591, 'test': 0.08183851385275458, 'val': 0.08266009402528642}, 8: {'train': 0.7621709172989181, 'test': 0.11893863300259819, 'val': 0.11889044969848371}, 9: {'train': 0.767148319853812, 'test': 0.11647659977665731, 'val': 0.11637508036953065}, 10: {'train': 0.761858894393556, 'test': 0.11907099832483872, 'val': 0.1190701072816053}, 11: {'train': 0.7621709172989181, 'test': 0.11890527533051894, 'val': 0.11892380737056296}}
+2024-10-08 14:43:31,518 - root - INFO - Saving results to /home/galadriel/dr_benchmark/processed_kgs/minimal_kg/mixed_test/permuted/kg.pkl...
