@@ -71,12 +71,6 @@ def main(args):
     # kg_train, kg_val, kg_test = load_fb15k()
 
     if config['common']['run_training']:
-        # Training metrics init file
-        training_metrics_file = os.path.join(config['common']['out'], 'training_metrics.csv')
-        with open(training_metrics_file, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Epoch', 'Training Loss', 'Validation MRR', 'Learning Rate'])  
-
         train_model(kg_train, kg_val, kg_test, config)
 
 def plot_learning_curves(train_losses, val_mrrs):
@@ -368,6 +362,19 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Initialize sampler
     sampler = initialize_sampler(config, kg_train, kg_val, kg_test)
 
+    # Initialize training metrics file
+    training_metrics_file = os.path.join(config['common']['out'], 'training_metrics.csv')
+    train_losses = []
+    val_mrrs = []
+    learning_rates = []
+    resume_checkpoint = config['training'].get('resume_checkpoint', None)
+
+    if not resume_checkpoint:
+        with open(training_metrics_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Epoch', 'Training Loss', 'Validation MRR', 'Learning Rate'])  
+
+
     max_epochs = config['training'].get('max_epochs', 1000)
     if 'max_epochs' not in config['training']:
         warnings.warn("The training max_epochs field is missing in the configuration. Defaulting to 1000.")
@@ -419,11 +426,6 @@ def train_model(kg_train, kg_val, kg_test, config):
     #################
     # Handlers
     #################
-
-    train_losses = []
-    val_mrrs = []
-    learning_rates = []
-    training_metrics_file = os.path.join(config['common']['out'], 'training_metrics.csv')
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_metrics_to_csv(engine):
         epoch = engine.state.epoch
@@ -543,7 +545,6 @@ def train_model(kg_train, kg_val, kg_test, config):
     #################
     # Checkpoint restart 
     #################
-    resume_checkpoint = config['training'].get('resume_checkpoint', None)
     if resume_checkpoint:
         if os.path.isfile(resume_checkpoint):
             logging.info(f"Resuming from checkpoint: {resume_checkpoint}")
@@ -551,12 +552,16 @@ def train_model(kg_train, kg_val, kg_test, config):
             # logging.info(f'keys: {checkpoint.keys()}') 
             Checkpoint.load_objects(to_load=to_save, checkpoint=checkpoint)
             logging.info("Checkpoint loaded successfully.")
+
+            with open(training_metrics_file, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['CHECKPOINT RESTART', 'CHECKPOINT RESTART', 'CHECKPOINT RESTART', 'CHECKPOINT RESTART'])
+
             if trainer.state.epoch < config['training']['max_epochs']:
                 logging.info(f"Starting from epoch {trainer.state.epoch}")
                 trainer.run(train_iterator)
             else:
                 logging.info(f"Training already completed. Last epoch is {trainer.state.epoch} and max_epochs set to {config['training']['max_epochs']}")
-
 
     #################
     # Train
