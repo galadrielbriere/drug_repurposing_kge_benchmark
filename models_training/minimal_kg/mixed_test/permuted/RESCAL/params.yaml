@@ -1,0 +1,35 @@
+common:
+  seed: 42
+  input_pkl: '/shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/processed_kgs/minimal_kg/mixed_test/permuted/kg.pkl'
+  out: '/shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/models_training/minimal_kg/mixed_test/permuted/RESCAL'
+  verbose: true
+  run_kg_prep: false
+  run_training: true
+  run_evaluation: false
+
+model:
+  name: "RESCAL"               
+  emb_dim: 200
+  margin: 1                  
+
+sampler:
+  name: 'Mixed'
+  n_neg: 5
+
+optimizer:
+  name: "Adam"
+  params:
+    lr: 0.001
+    weight_decay: 0.001                        
+
+lr_scheduler:
+  type: "CosineAnnealingWarmRestarts"
+  params:
+    T_0: 50
+    T_mult: 1         
+
+training:
+  max_epochs: 2000              
+  batch_size: 2048     
+  eval_interval: 100
+  eval_batch_size: 32
