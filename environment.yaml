@@ -1,0 +1,23 @@
+name: drug_repurposing_benchmark  
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - pyg
+  # - nvidia # CUDA
+dependencies:
+  - python=3.10
+  - pandas
+  - pyyaml
+  - numpy
+  - pytorch
+  - torchvision
+  - torchaudio
+  # - cudatoolkit=12.2  # CUDA 
+  - tqdm
+  - matplotlib
+  - ignite
+  - pyg
+  - pip
+  - pip:
+      - torchkge
