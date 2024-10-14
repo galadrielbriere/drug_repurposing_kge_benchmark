@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - pytorch
   - pyg
-  # - nvidia # CUDA
+  - nvidia # CUDA
 dependencies:
   - python=3.10
   - pandas
@@ -13,7 +13,7 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  # - cudatoolkit=12.2  # CUDA 
+  - cudatoolkit  # CUDA
   - tqdm
   - matplotlib
   - ignite
