@@ -1,8 +1,8 @@
 common:
   seed: 42
-  # input_csv: "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
-  input_pkl: '/home/galadriel/dr_benchmark/processed_kgs/minimal_kg/mixed_test/unpermuted/kg.pkl'
-  out: "./"
+  # input_csv: "/shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
+  input_pkl: '/shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/processed_kgs/minimal_kg/mixed_test/unpermuted/kg.pkl'
+  out: "/shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/processed_kgs/minimal_kg/mixed_test/unpermuted"
   verbose: true
   run_kg_prep: false
   run_training: true
