@@ -1,8 +1,18 @@
+import logging
+
+# Configure logging
+logging.captureWarnings(True)
+log_level = logging.INFO# if config["common"]['verbose'] else logging.WARNING
+logging.basicConfig(
+    level=log_level,  
+    format='%(asctime)s - %(levelname)s - %(message)s' 
+)
+
+import sys
 import os
 import argparse
 import torch
 import torch.optim as optim
-import logging
 import torchkge.models
 import torchkge.sampling 
 import numpy as np
@@ -12,8 +22,10 @@ import gc
 import json
 import csv 
 import matplotlib.pyplot as plt
+import TransGNN
 
-# from torchkge.utils.datasets import load_fb15k
+
+from torchkge.utils.datasets import load_fb15k
 
 from torchkge.evaluation import LinkPredictionEvaluator
 from torchkge.utils import MarginLoss, BinaryCrossEntropyLoss, DataLoader
@@ -36,16 +48,7 @@ def main(args):
 
     # Load configuration
     config = parse_yaml(args.config)
-
-    # Configure logging
-    logging.captureWarnings(True)
-    log_level = logging.INFO
-    logging.basicConfig(
-        level=log_level,  
-        format='%(asctime)s - %(levelname)s - %(message)s' 
-    )
-
-
+  
     logging.info("Configuration loaded:\n%s", json.dumps(config, indent=4))
 
     # Create output folder if it doesn't exist
@@ -103,7 +106,7 @@ def plot_learning_curves(train_losses, val_mrrs):
 def initialize_model(config, kg_train, device):
     """Initialize the model based on the configuration."""
 
-    translational_models = ['TransE', 'TransH', 'TransR', 'TransD', 'TorusE']
+    translational_models = ['TransE', 'TransH', 'TransR', 'TransD', 'TorusE', 'TransEModelWithGCN']
 
     model_name = config['model'].get('name', 'TransE')
     if 'name' not in config['model']:
@@ -183,6 +186,9 @@ def initialize_model(config, kg_train, device):
         model = torchkge.models.ConvKBModel(emb_dim, n_filters, kg_train.n_ent, kg_train.n_rel)
         criterion = BinaryCrossEntropyLoss()
 
+    elif model_name == "TransEModelWithGCN":
+        model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
+        criterion = MarginLoss(margin)
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -392,8 +398,10 @@ def train_model(kg_train, kg_val, kg_test, config):
 
     use_cuda = 'all' if device.type == 'cuda' else None
     train_iterator = DataLoader(kg_train, batch_size, use_cuda=use_cuda)
-
+    logging.info(f'Number of training batches: {len(train_iterator)}')
+    
     def process_batch(engine, batch):
+        logging.info("Batch proc")
         h, t, r = batch[0].to(device), batch[1].to(device), batch[2].to(device)
         
         n_h, n_t = sampler.corrupt_batch(h, t, r)
