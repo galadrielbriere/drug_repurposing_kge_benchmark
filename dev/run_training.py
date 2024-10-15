@@ -409,7 +409,6 @@ def train_model(kg_train, kg_val, kg_test, config):
     logging.info(f'Number of training batches: {len(train_iterator)}')
     
     def process_batch(engine, batch):
-        logging.info("Batch proc")
         h, t, r = batch[0].to(device), batch[1].to(device), batch[2].to(device)
         n_h, n_t = sampler.corrupt_batch(h, t, r)
         n_h, n_t = n_h.to(device), n_t.to(device)  
