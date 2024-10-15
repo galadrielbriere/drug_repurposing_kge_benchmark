@@ -41,6 +41,7 @@ from kg_processing import (
     load_knowledge_graph,
 )
 from mixed_sampler import MixedNegativeSampler
+from positional_sampler import PositionalNegativeSampler
 
 def main(args):
 
@@ -203,7 +204,7 @@ def initialize_sampler(config, kg_train, kg_val, kg_test):
 
 
     if sampler_name == 'Positional':
-        sampler = torchkge.sampling.PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
+        sampler = PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
     
     elif sampler_name == 'Uniform':
         sampler = torchkge.sampling.UniformNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
@@ -410,7 +411,6 @@ def train_model(kg_train, kg_val, kg_test, config):
     def process_batch(engine, batch):
         logging.info("Batch proc")
         h, t, r = batch[0].to(device), batch[1].to(device), batch[2].to(device)
-        
         n_h, n_t = sampler.corrupt_batch(h, t, r)
         n_h, n_t = n_h.to(device), n_t.to(device)  
 
@@ -512,9 +512,10 @@ def train_model(kg_train, kg_val, kg_test, config):
             'trainer': trainer
         }
 
+    checkpoint_dir = os.path.join(config['common']['out'], 'checkpoints')
     checkpoint_periodic_handler = Checkpoint(
         to_save,                        # Dictionnaire des objets à sauvegarder
-        DiskSaver(dirname='checkpoints', require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
+        DiskSaver(dirname=checkpoint_dir, require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
         n_saved=2,                      # Garder les 2 derniers checkpoints
         global_step_transform=lambda *_: trainer.state.epoch,      # Inclure le numéro d'époque
     )
@@ -529,7 +530,7 @@ def train_model(kg_train, kg_val, kg_test, config):
         return engine.state.metrics.get('val_mrr', 0)
 
     checkpoint_best_handler = ModelCheckpoint(
-        dirname='checkpoints',                                     # Répertoire de sauvegarde
+        dirname=checkpoint_dir,                                     # Répertoire de sauvegarde
         filename_prefix='best_model',                       # Préfixe du nom de fichier
         n_saved=1,                                                 # Garder seulement le meilleur modèle
         score_function=get_val_mrr,                                # Fonction de score basée sur val_mrr
@@ -613,9 +614,9 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Charger le meilleur modèle
     new_model, _ = initialize_model(config, kg_train, device)
     logging.info("Loading best model.")
-    best_model = find_best_model(os.path.join(config['common']['out'],'checkpoints'))
-    logging.info(f"Best model is {os.path.join(config['common']['out'],'checkpoints', best_model)}")
-    checkpoint = torch.load(os.path.join(config['common']['out'],'checkpoints', best_model))
+    best_model = find_best_model(checkpoint_dir)
+    logging.info(f"Best model is {os.path.join(checkpoint_dir, best_model)}")
+    checkpoint = torch.load(os.path.join(checkpoint_dir, best_model))
     # print(checkpoint.keys()) 
     new_model.load_state_dict(checkpoint["model"])
     logging.info("Best model successfully loaded.")
