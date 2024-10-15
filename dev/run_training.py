@@ -23,6 +23,7 @@ import json
 import csv 
 import matplotlib.pyplot as plt
 import TransGNN
+import DistGNN
 
 
 from torchkge.utils.datasets import load_fb15k
@@ -184,6 +185,11 @@ def initialize_model(config, kg_train, device):
     elif model_name == "TransEModelWithGCN":
         model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
         criterion = MarginLoss(margin)
+
+    elif model_name == "DistMultModelWithGCN":
+        model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
+        criterion = MarginLoss(margin)
+
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
