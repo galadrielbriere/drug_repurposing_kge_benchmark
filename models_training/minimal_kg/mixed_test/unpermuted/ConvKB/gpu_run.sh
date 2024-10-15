@@ -8,8 +8,8 @@
 #SBATCH --mem=20G
 
 module load conda
-
-conda activate drug_repurposing_benchmark
+source /shared/ifbstor1/software/miniconda/etc/profile.d/conda.sh
+conda activate torch_pyg
 
 python /shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/dev/run_training.py \
     --config /shared/projects/ml_het_bio_nets/drug_repurposing_kge_benchmark/models_training/minimal_kg/mixed_test/unpermuted/ConvKB/params.yaml \
