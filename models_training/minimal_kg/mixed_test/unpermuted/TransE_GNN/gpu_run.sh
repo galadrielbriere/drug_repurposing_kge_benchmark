@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:1g.5gb:1
+#SBATCH --gres=gpu:3g.20gb:1
 #SBATCH --time 3-00:00:00
 #SBATCH --job-name=TransE_GNN
 #SBATCH --output=TransE_GNN_%j.txt
