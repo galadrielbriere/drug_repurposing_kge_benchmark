@@ -27,27 +27,14 @@ class DistMultModelWithGCN(BilinearModel):
         num_gcn_layers : int, optional
             Nombre de couches de convolution GCN pour chaque type d'arête, par défaut 2.
         aggr : str, optional
-            Type d'agrégation ('sum', 'mean', 'max', 'cat'), par défaut 'sum'.
-        dissimilarity_type : str, optional
-            Type de dissimilarité ('L1' ou 'L2'), par défaut 'L2'.
         """
-        logger.info("MyClass instanciée")
-        logger.info(f"n_entities = {n_entities}")
-        logger.info(f"n_relations = {n_relations}")
+        super().__init__(emb_dim, n_entities, n_relations) ###
 
-        super().__init__(n_entities, n_relations) ###
-        logger.info("__init_class super")
-
-        self.emb_dim = emb_dim
         self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg)
         self.hetero_data = self.hetero_data.to(device)
 
         # Initialisation des embeddings des relations
-        logger.info('before init')
-        logger.info(f"self n_rel = {self.n_rel}")
-        logger.info(f"self emb dim = {self.emb_dim}")
         self.rel_emb = my_init_embedding(self.n_rel, self.emb_dim)
-        logger.info('after init')
 
         logger.info(f"self.hetero_data.node_types={self.hetero_data.node_types}")
         # Initialisation des embeddings initiaux pour chaque type de nœud
@@ -58,7 +45,6 @@ class DistMultModelWithGCN(BilinearModel):
 
         # Définir l'agrégation pour HeteroConv
         self.aggr = aggr
-        logger.info("set agrr = OK")
 
         self.convs = nn.ModuleList()
         # Définition des couches GCN multiples pour chaque type d'arête
@@ -69,8 +55,6 @@ class DistMultModelWithGCN(BilinearModel):
                     )
                     self.convs.append(conv)
                     logger.info(f"Initialized HeteroConv layer {layer+1} with {len(conv.convs)} edge types.")
-
-        logger.info("Def convs = OK")
 
      
         # self.hetero_conv = HeteroConv(self.convs, aggr=self.aggr)
