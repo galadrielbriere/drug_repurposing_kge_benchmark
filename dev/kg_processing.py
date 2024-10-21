@@ -97,7 +97,7 @@ def prepare_knowledge_graph(config):
     kg_df = pd.read_csv(input_file, sep="\t")[["my_x_id", "my_y_id", "relation"]]
     kg_df = kg_df.rename(columns={'my_x_id': 'from', 'my_y_id': 'to', 'relation': 'rel'})
 
-    if config["clean_kg"]["smaller_kg"]:
+    if config.get("clean_kg", {}).get("smaller_kg", False):
         logging.info(f"Keeping only relations {config['clean_kg']['keep_relations']}")
         kg_df = kg_df[kg_df['rel'].isin(config["clean_kg"]['keep_relations'])]
 
@@ -186,7 +186,7 @@ def clean_knowledge_graph(kg, config):
     else:
         logging.info("Entity coverage verified successfully.")
 
-    if config['clean_kg']['rel_swap']:
+    if config.get("clean_kg", {}).get("rel_swap", False):
         kg_train, kg_val, kg_test = specs_sets(kg_train, kg_val, kg_test, config)
 
     new_train, new_val, new_test = my_data_redundancy.ensure_entity_coverage(kg_train, kg_val, kg_test)
@@ -200,7 +200,7 @@ def clean_knowledge_graph(kg, config):
     else:
         logging.info("Entity coverage verified successfully.")
 
-    if config['clean_kg']['compute_proportions']:
+    if config.get("clean_kg", {}).get("compute_proportions", True):
         logging.info("Computing triplet proportions...")
         logging.info(my_data_redundancy.compute_triplet_proportions(kg_train, kg_test, kg_val))
 

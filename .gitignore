@@ -1,6 +1,7 @@
 dev/__pycache__/
 knowledge_graph/
-processed_kgs/**/kg.pkl
 raw_data/
-models_training/**/kg.pkl
-
+models_training/
+processed_kgs/
+experiment1_user_induced_DL/**/kg.pkl
+experiment2_structural_DL/**/kg.pkl

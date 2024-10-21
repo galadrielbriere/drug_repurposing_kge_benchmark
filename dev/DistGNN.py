@@ -68,7 +68,6 @@ class DistMultModelWithGCN(BilinearModel):
         Passe les embeddings des nœuds à travers les couches GNN.
         """
         x_dict = {node_type: embedding.weight for node_type, embedding in self.node_embeddings.items()}
-        logger.info("Starting forward_gnn")
 
         # Passer à travers les couches HeteroConv
         for i, conv in enumerate(self.convs):
@@ -103,7 +102,6 @@ class DistMultModelWithGCN(BilinearModel):
         
         # Récupérer les embeddings du GNN pour les heads, tails et relations
         gnn_output = self.forward_gnn()
-        logger.info(f'GNN FORWARD OK')
         # 1. Déterminer les types de nœuds pour les heads et tails à partir de kg_to_node_type
         h_node_types = [self.kg2nodetype[h.item()] for h in h_idx]
         t_node_types = [self.kg2nodetype[t.item()] for t in t_idx]
