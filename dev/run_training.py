@@ -346,8 +346,6 @@ def find_best_model(dir):
 
 def link_pred(model, kg, batch_size):
     """Link prediction evaluation on test set."""
-    model.normalize_parameters()
-
     # Test MRR measure
     evaluator = LinkPredictionEvaluator(model, kg)
     evaluator.evaluate(b_size=batch_size, verbose=True)
@@ -426,8 +424,11 @@ def train_model(kg_train, kg_val, kg_test, config):
         loss = criterion(pos, neg)
         loss.backward()
         
-        # Mise à jour des paramètres
+        # Mise à jour des paramètres de l'optimizer
         optimizer.step()
+
+        # Normalisation des paramètres du modèle
+        model.normalize_parameters()
 
         return loss.item()
 
@@ -469,6 +470,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     @trainer.on(Events.EPOCH_COMPLETED(every=eval_interval))
     def evaluate(engine):
         logging.info(f"Evaluating on validation set at epoch {engine.state.epoch}...")
+        model.eval()  # Met le modèle en mode évaluation
         with torch.no_grad():
             val_mrr = link_pred(model, kg_val, eval_batch_size) 
         engine.state.metrics['val_mrr'] = val_mrr 
@@ -477,6 +479,8 @@ def train_model(kg_train, kg_val, kg_test, config):
         if scheduler and isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
             scheduler.step(val_mrr)
             logging.info('Stepping scheduler ReduceLROnPlateau.')
+
+        model.train()  # Remet le modèle en mode entraînement
 
     ##### Scheduler update
     @trainer.on(Events.EPOCH_COMPLETED)
