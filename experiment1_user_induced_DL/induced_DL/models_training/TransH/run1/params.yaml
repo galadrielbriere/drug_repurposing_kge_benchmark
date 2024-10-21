@@ -8,7 +8,7 @@ common:
   run_evaluation: false
 
 model:
-  name: "TransE"               
+  name: "TransH"               
   emb_dim: 200
   margin: 1                  
 
