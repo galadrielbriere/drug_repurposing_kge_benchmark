@@ -1,0 +1,1 @@
+python /home/galadriel/dr_benchmark/dev/run_training.py --config /home/galadriel/dr_benchmark/experiment1_user_induced_DL/no_DL/kg_processing/params.yaml 2>&1 | tee /home/galadriel/dr_benchmark/experiment1_user_induced_DL/no_DL/kg_processing/out.log

@@ -23,6 +23,7 @@ import json
 import csv 
 import matplotlib.pyplot as plt
 import TransGNN
+import DistGNN
 
 
 from torchkge.utils.datasets import load_fb15k
@@ -41,6 +42,7 @@ from kg_processing import (
     load_knowledge_graph,
 )
 from mixed_sampler import MixedNegativeSampler
+from positional_sampler import PositionalNegativeSampler
 
 def main(args):
 
@@ -183,6 +185,11 @@ def initialize_model(config, kg_train, device):
     elif model_name == "TransEModelWithGCN":
         model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
         criterion = MarginLoss(margin)
+
+    elif model_name == "DistMultModelWithGCN":
+        model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
+        criterion = BinaryCrossEntropyLoss()
+
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -203,7 +210,7 @@ def initialize_sampler(config, kg_train, kg_val, kg_test):
 
 
     if sampler_name == 'Positional':
-        sampler = torchkge.sampling.PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
+        sampler = PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
     
     elif sampler_name == 'Uniform':
         sampler = torchkge.sampling.UniformNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
@@ -339,8 +346,6 @@ def find_best_model(dir):
 
 def link_pred(model, kg, batch_size):
     """Link prediction evaluation on test set."""
-    model.normalize_parameters()
-
     # Test MRR measure
     evaluator = LinkPredictionEvaluator(model, kg)
     evaluator.evaluate(b_size=batch_size, verbose=True)
@@ -408,9 +413,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     logging.info(f'Number of training batches: {len(train_iterator)}')
     
     def process_batch(engine, batch):
-        logging.info("Batch proc")
         h, t, r = batch[0].to(device), batch[1].to(device), batch[2].to(device)
-        
         n_h, n_t = sampler.corrupt_batch(h, t, r)
         n_h, n_t = n_h.to(device), n_t.to(device)  
 
@@ -421,8 +424,11 @@ def train_model(kg_train, kg_val, kg_test, config):
         loss = criterion(pos, neg)
         loss.backward()
         
-        # Mise à jour des paramètres
+        # Mise à jour des paramètres de l'optimizer
         optimizer.step()
+
+        # Normalisation des paramètres du modèle
+        model.normalize_parameters()
 
         return loss.item()
 
@@ -464,6 +470,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     @trainer.on(Events.EPOCH_COMPLETED(every=eval_interval))
     def evaluate(engine):
         logging.info(f"Evaluating on validation set at epoch {engine.state.epoch}...")
+        model.eval()  # Met le modèle en mode évaluation
         with torch.no_grad():
             val_mrr = link_pred(model, kg_val, eval_batch_size) 
         engine.state.metrics['val_mrr'] = val_mrr 
@@ -472,6 +479,8 @@ def train_model(kg_train, kg_val, kg_test, config):
         if scheduler and isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
             scheduler.step(val_mrr)
             logging.info('Stepping scheduler ReduceLROnPlateau.')
+
+        model.train()  # Remet le modèle en mode entraînement
 
     ##### Scheduler update
     @trainer.on(Events.EPOCH_COMPLETED)
@@ -497,6 +506,15 @@ def train_model(kg_train, kg_val, kg_test, config):
         early_stopping
     )
 
+    # def print_gpu_memory(message=""):
+    #     allocated = torch.cuda.memory_allocated() / 1024**3
+    #     reserved = torch.cuda.memory_reserved() / 1024**3
+    #     logging.info(f"{message} - Memory Allocated: {allocated:.2f} GB, Memory Reserved: {reserved:.2f} GB")
+
+    # @trainer.on(Events.EPOCH_COMPLETED)
+    # def log_gpu_memory(engine):
+    #     print_gpu_memory("After epoch")
+
     ##### Checkpoint periodic
     if scheduler:
         to_save = {
@@ -512,24 +530,49 @@ def train_model(kg_train, kg_val, kg_test, config):
             'trainer': trainer
         }
 
-    checkpoint_periodic_handler = Checkpoint(
+    checkpoint_dir = os.path.join(config['common']['out'], 'checkpoints')
+    
+    # Create the checkpoint handler
+    checkpoint_handler = Checkpoint(
         to_save,                        # Dictionnaire des objets à sauvegarder
-        DiskSaver(dirname='checkpoints', require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
+        DiskSaver(dirname=checkpoint_dir, require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
         n_saved=2,                      # Garder les 2 derniers checkpoints
         global_step_transform=lambda *_: trainer.state.epoch,      # Inclure le numéro d'époque
     )
+        
+    # Custom save function to move the model to CPU before saving and back to GPU after
+    def save_checkpoint_to_cpu(engine):
+        # Move model to CPU before saving
+        model.to('cpu')
 
-    # Attach checkpoint handler to trainer
-    trainer.add_event_handler(
-        Events.EPOCH_COMPLETED, 
-        checkpoint_periodic_handler)
+        # Save the checkpoint
+        checkpoint_handler(engine)
+
+        # Move model back to GPU
+        model.to(device)
+
+    # Attach checkpoint handler to trainer and call save_checkpoint_to_cpu
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, save_checkpoint_to_cpu)
+    
+
+    # checkpoint_periodic_handler = Checkpoint(
+    #     to_save,                        # Dictionnaire des objets à sauvegarder
+    #     DiskSaver(dirname=checkpoint_dir, require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
+    #     n_saved=2,                      # Garder les 2 derniers checkpoints
+    #     global_step_transform=lambda *_: trainer.state.epoch,      # Inclure le numéro d'époque
+    # )
+
+    # # Attach checkpoint handler to trainer
+    # trainer.add_event_handler(
+    #     Events.EPOCH_COMPLETED, 
+    #     checkpoint_periodic_handler)
 
     ##### Checkpoint best MRR
     def get_val_mrr(engine):
         return engine.state.metrics.get('val_mrr', 0)
 
     checkpoint_best_handler = ModelCheckpoint(
-        dirname='checkpoints',                                     # Répertoire de sauvegarde
+        dirname=checkpoint_dir,                                     # Répertoire de sauvegarde
         filename_prefix='best_model',                       # Préfixe du nom de fichier
         n_saved=1,                                                 # Garder seulement le meilleur modèle
         score_function=get_val_mrr,                                # Fonction de score basée sur val_mrr
@@ -560,6 +603,8 @@ def train_model(kg_train, kg_val, kg_test, config):
             # logging.info(f'keys: {checkpoint.keys()}') 
             Checkpoint.load_objects(to_load=to_save, checkpoint=checkpoint)
             logging.info("Checkpoint loaded successfully.")
+
+            model.to(device)
 
             with open(training_metrics_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
@@ -613,9 +658,9 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Charger le meilleur modèle
     new_model, _ = initialize_model(config, kg_train, device)
     logging.info("Loading best model.")
-    best_model = find_best_model(os.path.join(config['common']['out'],'checkpoints'))
-    logging.info(f"Best model is {os.path.join(config['common']['out'],'checkpoints', best_model)}")
-    checkpoint = torch.load(os.path.join(config['common']['out'],'checkpoints', best_model))
+    best_model = find_best_model(checkpoint_dir)
+    logging.info(f"Best model is {os.path.join(checkpoint_dir, best_model)}")
+    checkpoint = torch.load(os.path.join(checkpoint_dir, best_model))
     # print(checkpoint.keys()) 
     new_model.load_state_dict(checkpoint["model"])
     logging.info("Best model successfully loaded.")

@@ -1,1 +1,0 @@
-python /home/galadriel/dr_benchmark/dev/run_training_GNN.py --config /home/galadriel/dr_benchmark/models_training/minimal_kg/mixed_test/unpermuted/params.yaml 2>&1 | tee /home/galadriel/dr_benchmark/models_training/minimal_kg/mixed_test/unpermuted/out.log

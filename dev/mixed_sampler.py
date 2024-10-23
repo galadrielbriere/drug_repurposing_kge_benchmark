@@ -3,7 +3,8 @@
 Original code from Galadriel Brière <marie-galadriel.briere@univ-amu.fr>, based on existing sampler implementations from Armand Boschin <aboschin@enst.fr> and TorchKGE developpers.
 """
 
-from torchkge.sampling import NegativeSampler, UniformNegativeSampler, BernoulliNegativeSampler, PositionalNegativeSampler
+from torchkge.sampling import NegativeSampler, UniformNegativeSampler, BernoulliNegativeSampler
+from positional_sampler import PositionalNegativeSampler
 from torch import cat
 
 class MixedNegativeSampler(NegativeSampler):
@@ -58,6 +59,9 @@ class MixedNegativeSampler(NegativeSampler):
         combined_neg_tails: torch.Tensor, dtype: torch.long
             Tensor containing the integer key of negatively sampled tails from both samplers.
         """
+
+        if heads.device != tails.device or heads.device != relations.device:
+            raise ValueError(f"Tensors are on different devices: h is on {heads.device}, t is on {tails.device}, r is on {relations.device}")
 
         if n_neg is None:
             n_neg = self.n_neg

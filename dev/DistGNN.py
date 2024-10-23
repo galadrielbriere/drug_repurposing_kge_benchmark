@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import normalize
 from torch_geometric.nn import HeteroConv, SAGEConv
-from torchkge.models import TranslationModel
+from torchkge.models import BilinearModel
 import logging
 from utils import my_init_embedding, create_hetero_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  
 
-class TransEModelWithGCN(TranslationModel):
-    def __init__(self, emb_dim, n_entities, n_relations, kg, device, num_gcn_layers=2, aggr='sum', dissimilarity_type='L2'):
+class DistMultModelWithGCN(BilinearModel):
+    def __init__(self, emb_dim, n_entities, n_relations, kg, device, num_gcn_layers=2, aggr='sum'):
         """
         Initialise le modèle TransE modifié avec un Heterogeneous GCN pour les embeddings des entités.
 
@@ -27,28 +27,14 @@ class TransEModelWithGCN(TranslationModel):
         num_gcn_layers : int, optional
             Nombre de couches de convolution GCN pour chaque type d'arête, par défaut 2.
         aggr : str, optional
-            Type d'agrégation ('sum', 'mean', 'max', 'cat'), par défaut 'sum'.
-        dissimilarity_type : str, optional
-            Type de dissimilarité ('L1' ou 'L2'), par défaut 'L2'.
         """
-        logger.info("TransEModelWithGCNlass instancated")
-        logger.info(f"n_entities = {n_entities}")
-        logger.info(f"n_relations = {n_relations}")
-        logger.info(f"dissimilarity_type = {dissimilarity_type}")
+        super().__init__(emb_dim, n_entities, n_relations) ###
 
-        super().__init__(n_entities, n_relations, dissimilarity_type) ###
-        logger.info("__init_class super")
-
-        self.emb_dim = emb_dim
         self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg)
         self.hetero_data = self.hetero_data.to(device)
 
         # Initialisation des embeddings des relations
-        logger.info('before init')
-        logger.info(f"self n_rel = {self.n_rel}")
-        logger.info(f"self emb dim = {self.emb_dim}")
         self.rel_emb = my_init_embedding(self.n_rel, self.emb_dim)
-        logger.info('after init')
 
         logger.info(f"self.hetero_data.node_types={self.hetero_data.node_types}")
         # Initialisation des embeddings initiaux pour chaque type de nœud
@@ -59,7 +45,6 @@ class TransEModelWithGCN(TranslationModel):
 
         # Définir l'agrégation pour HeteroConv
         self.aggr = aggr
-        logger.info("set agrr = OK")
 
         self.convs = nn.ModuleList()
         # Définition des couches GCN multiples pour chaque type d'arête
@@ -70,8 +55,6 @@ class TransEModelWithGCN(TranslationModel):
                     )
                     self.convs.append(conv)
                     logger.info(f"Initialized HeteroConv layer {layer+1} with {len(conv.convs)} edge types.")
-
-        logger.info("Def convs = OK")
 
      
         # self.hetero_conv = HeteroConv(self.convs, aggr=self.aggr)
@@ -119,7 +102,6 @@ class TransEModelWithGCN(TranslationModel):
         
         # Récupérer les embeddings du GNN pour les heads, tails et relations
         gnn_output = self.forward_gnn()
-        
         # 1. Déterminer les types de nœuds pour les heads et tails à partir de kg_to_node_type
         h_node_types = [self.kg2nodetype[h.item()] for h in h_idx]
         t_node_types = [self.kg2nodetype[t.item()] for t in t_idx]
@@ -154,8 +136,8 @@ class TransEModelWithGCN(TranslationModel):
         h_normalized = normalize(h_embeddings, p=2, dim=1)
         t_normalized = normalize(t_embeddings, p=2, dim=1)
 
-        # 5. Appliquer la dissimilarité sur les triplets (h, r, t)
-        return -self.dissimilarity(h_normalized + r_embeddings, t_normalized)
+        # 5. Calculer la similarité pour le triplet (h, r, t)
+        return (h_normalized * r_embeddings * t_normalized).sum(dim=1)
 
 
     def normalize_parameters(self):
