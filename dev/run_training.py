@@ -506,6 +506,15 @@ def train_model(kg_train, kg_val, kg_test, config):
         early_stopping
     )
 
+    # def print_gpu_memory(message=""):
+    #     allocated = torch.cuda.memory_allocated() / 1024**3
+    #     reserved = torch.cuda.memory_reserved() / 1024**3
+    #     logging.info(f"{message} - Memory Allocated: {allocated:.2f} GB, Memory Reserved: {reserved:.2f} GB")
+
+    # @trainer.on(Events.EPOCH_COMPLETED)
+    # def log_gpu_memory(engine):
+    #     print_gpu_memory("After epoch")
+
     ##### Checkpoint periodic
     if scheduler:
         to_save = {
@@ -522,17 +531,41 @@ def train_model(kg_train, kg_val, kg_test, config):
         }
 
     checkpoint_dir = os.path.join(config['common']['out'], 'checkpoints')
-    checkpoint_periodic_handler = Checkpoint(
+    
+    # Create the checkpoint handler
+    checkpoint_handler = Checkpoint(
         to_save,                        # Dictionnaire des objets à sauvegarder
         DiskSaver(dirname=checkpoint_dir, require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
         n_saved=2,                      # Garder les 2 derniers checkpoints
         global_step_transform=lambda *_: trainer.state.epoch,      # Inclure le numéro d'époque
     )
+        
+    # Custom save function to move the model to CPU before saving and back to GPU after
+    def save_checkpoint_to_cpu(engine):
+        # Move model to CPU before saving
+        model.to('cpu')
 
-    # Attach checkpoint handler to trainer
-    trainer.add_event_handler(
-        Events.EPOCH_COMPLETED, 
-        checkpoint_periodic_handler)
+        # Save the checkpoint
+        checkpoint_handler(engine)
+
+        # Move model back to GPU
+        model.to(device)
+
+    # Attach checkpoint handler to trainer and call save_checkpoint_to_cpu
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, save_checkpoint_to_cpu)
+    
+
+    # checkpoint_periodic_handler = Checkpoint(
+    #     to_save,                        # Dictionnaire des objets à sauvegarder
+    #     DiskSaver(dirname=checkpoint_dir, require_empty=False, create_dir=True),  # Gestionnaire de sauvegarde
+    #     n_saved=2,                      # Garder les 2 derniers checkpoints
+    #     global_step_transform=lambda *_: trainer.state.epoch,      # Inclure le numéro d'époque
+    # )
+
+    # # Attach checkpoint handler to trainer
+    # trainer.add_event_handler(
+    #     Events.EPOCH_COMPLETED, 
+    #     checkpoint_periodic_handler)
 
     ##### Checkpoint best MRR
     def get_val_mrr(engine):
@@ -570,6 +603,8 @@ def train_model(kg_train, kg_val, kg_test, config):
             # logging.info(f'keys: {checkpoint.keys()}') 
             Checkpoint.load_objects(to_load=to_save, checkpoint=checkpoint)
             logging.info("Checkpoint loaded successfully.")
+
+            model.to(device)
 
             with open(training_metrics_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
