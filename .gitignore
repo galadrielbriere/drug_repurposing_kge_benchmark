@@ -4,3 +4,9 @@ raw_data/
 processed_kgs/
 experiment1_user_induced_DL/**/kg.pkl
 experiment2_structural_DL/**/kg.pkl
+experiment1_user_induced_DL/**/checkpoints
+experiment2_structural_DL/**/checkpoints
+experiment1_user_induced_DL/**/training_metrics.csv
+experiment1_user_induced_DL/**/*.log
+experiment2_structural_DL/**/training_metrics.csv
+experiment2_structural_DL/**/*.log

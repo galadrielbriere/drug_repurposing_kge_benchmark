@@ -28,3 +28,5 @@ training:
   eval_interval: 20
   eval_batch_size: 64
   patience: 20
+  eval_batch_size: 40
+  resume_checkpoint: 'checkpoints/checkpoint_19.pt'
