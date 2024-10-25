@@ -745,6 +745,7 @@ def train_model(kg_train, kg_val, kg_test, config):
         test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, mrr_file)
 
         logging.info(f"Final Test MRR with best model: {test_mrr}")
+  
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
