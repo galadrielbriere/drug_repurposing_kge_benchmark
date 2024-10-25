@@ -79,7 +79,7 @@ def main(args):
     if config['common']['run_training']:
         train_model(kg_train, kg_val, kg_test, config)
 
-def plot_learning_curves(train_losses, val_mrrs):
+def plot_learning_curves(train_losses, val_mrrs, config):
     epochs = range(1, len(train_losses) + 1)
     
     # Courbe de la perte d'entraînement
@@ -89,8 +89,8 @@ def plot_learning_curves(train_losses, val_mrrs):
     plt.ylabel('Loss')
     plt.title('Training Loss Over Time')
     plt.legend()
-    plt.show()
-
+    plt.savefig(os.path.join(config['common']['out'], 'training_loss_curve.png'))
+    
     # Courbe du MRR sur validation
     plt.figure()
     plt.plot(epochs, val_mrrs, label='Validation MRR')
@@ -98,7 +98,7 @@ def plot_learning_curves(train_losses, val_mrrs):
     plt.ylabel('MRR')
     plt.title('Validation MRR Over Time')
     plt.legend()
-    plt.show()
+    plt.savefig(os.path.join(config['common']['out'], 'validation_mrr_curve.png'))
 
 def initialize_model(config, kg_train, device):
     """Initialize the model based on the configuration."""
@@ -701,9 +701,9 @@ def train_model(kg_train, kg_val, kg_test, config):
     #################
     # Report metrics
     #################
-    plot_learning_curves(train_losses, val_mrrs)
-    plt.savefig(os.path.join(config['common']['out'], 'training_loss_curve.png'))
-    plt.savefig(os.path.join(config['common']['out'], 'validation_mrr_curve.png'))
+    plot_training_metrics = config['common'].get('plot_training_metrics', True)
+    if plot_training_metrics:
+        plot_learning_curves(train_losses, val_mrrs, config)
 
     #################
     # Evaluation on test set
