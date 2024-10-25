@@ -17,7 +17,8 @@ import torchkge.models
 import torchkge.sampling 
 import numpy as np
 from torch.optim import lr_scheduler
-import warnings 
+import warnings
+import yaml 
 import gc
 import json
 import csv 
@@ -353,6 +354,77 @@ def link_pred(model, kg, batch_size):
     test_mrr = evaluator.mrr()[1]
     return test_mrr
 
+def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, output_file):
+    results = {
+        "List_1": {},
+        "List_2": {},
+        "Remaining_Relations": {},
+        "Global_MRR": None
+    }
+
+    total_relations = set(kg_test.rel2ix.keys())  
+    set_rel_1 = set(list_rel_1)
+    set_rel_2 = set(list_rel_2)
+    remaining_relations = total_relations - set_rel_1 - set_rel_2
+
+    def calculate_mrr_for_relations(relations, group_name):
+        if not relations:
+            results[group_name]["No_Relations"] = True
+            return 0.0
+
+        mrr_sum = 0.0
+        count = 0
+        for relation_name in relations:
+            if relation_name not in kg_test.rel2ix:
+                results[group_name][relation_name] = {"Error": "Relation not found in KG"}
+                logging.info(f"Error: Relation '{relation_name}' not found in KG.")
+                continue
+            
+            try:
+                # Récupérer l'index de la relation via son nom
+                relation_index = kg_test.rel2ix[relation_name]
+                indices_to_keep = torch.nonzero(kg_test.relations == relation_index, as_tuple=False).squeeze()
+                new_kg = kg_test.keep_triples(indices_to_keep)
+                test_mrr = link_pred(model, new_kg, 32)
+                mrr_sum += test_mrr
+                count += 1
+
+                results[group_name][relation_name] = {"MRR": round(test_mrr, 4)}
+                logging.info(f"MRR for relation '{relation_name}': {test_mrr:.4f}")
+
+            except Exception as e:
+                results[group_name][relation_name] = {"Error": str(e)}
+                logging.info(f"Error processing relation '{relation_name}': {str(e)}")
+
+        return mrr_sum / count if count > 0 else 0.0
+
+    logging.info("Calculating MRR for List 1...")
+    mrr_list_1 = calculate_mrr_for_relations(list_rel_1, "List_1")
+    results["List_1"]["MRR_Average"] = round(mrr_list_1, 10)
+
+    logging.info("Calculating MRR for List 2...")
+    mrr_list_2 = calculate_mrr_for_relations(list_rel_2, "List_2")
+    results["List_2"]["MRR_Average"] = round(mrr_list_2, 10)
+    
+    logging.info("Calculating MRR for Remaining Relations...")
+    mrr_remaining = calculate_mrr_for_relations(remaining_relations, "Remaining_Relations")
+    results["Remaining_Relations"]["MRR_Average"] = round(mrr_remaining, 10)
+
+    # Calculer le MRR global
+    total_mrr = (mrr_list_1 * len(list_rel_1) + 
+                 mrr_list_2 * len(list_rel_2) + 
+                 mrr_remaining * len(remaining_relations)) / len(total_relations)
+
+    results["Global_MRR"] = round(total_mrr, 10)
+
+    # Enregistrer les résultats dans un fichier YAML
+    with open(output_file, "w") as yaml_file:
+        yaml.dump(results, yaml_file, default_flow_style=False)
+
+    logging.info(f"Results saved to {output_file}")
+
+    return total_mrr
+
 def train_model(kg_train, kg_val, kg_test, config):
 
     #################
@@ -637,10 +709,10 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Evaluation on test set
     #################
 
-    # TEST SUR LE DERNIER MODELE
-    logging.info("Evaluating on the test set with last model...")
-    test_mrr = link_pred(model, kg_test, eval_batch_size)
-    logging.info(f"Final Test MRR with last model: {test_mrr}")
+    # # TEST SUR LE DERNIER MODELE
+    # logging.info("Evaluating on the test set with last model...")
+    # test_mrr = link_pred(model, kg_test, eval_batch_size)
+    # logging.info(f"Final Test MRR with last model: {test_mrr}")
 
     # def print_gpu_memory(message=""):
     #     allocated = torch.cuda.memory_allocated() / 1024**3
@@ -648,25 +720,31 @@ def train_model(kg_train, kg_val, kg_test, config):
     #     print(f"{message} - Memory Allocated: {allocated:.2f} GB, Memory Reserved: {reserved:.2f} GB")
 
     # print_gpu_memory("Before clearing variables")
-  
-    model.to("cpu")
-    del model
-    model = None
-    torch.cuda.empty_cache()    
-    gc.collect()
 
-    # Charger le meilleur modèle
-    new_model, _ = initialize_model(config, kg_train, device)
-    logging.info("Loading best model.")
-    best_model = find_best_model(checkpoint_dir)
-    logging.info(f"Best model is {os.path.join(checkpoint_dir, best_model)}")
-    checkpoint = torch.load(os.path.join(checkpoint_dir, best_model))
-    # print(checkpoint.keys()) 
-    new_model.load_state_dict(checkpoint["model"])
-    logging.info("Best model successfully loaded.")
-    logging.info("Evaluating on the test set with best model...")
-    test_mrr = link_pred(new_model, kg_test, eval_batch_size)
-    logging.info(f"Final Test MRR with best model: {test_mrr}")
+    if config["common"]["run_evaluation"]:
+        model.to("cpu")
+        del model
+        model = None
+        torch.cuda.empty_cache()    
+        gc.collect()
+
+        # Charger le meilleur modèle
+        new_model, _ = initialize_model(config, kg_train, device)
+        logging.info("Loading best model.")
+        best_model = find_best_model(checkpoint_dir)
+        logging.info(f"Best model is {os.path.join(checkpoint_dir, best_model)}")
+        checkpoint = torch.load(os.path.join(checkpoint_dir, best_model))
+        new_model.load_state_dict(checkpoint["model"])
+        logging.info("Best model successfully loaded.")
+        logging.info("Evaluating on the test set with best model...")
+
+        list_rel_1 = ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
+        list_rel_2 = ["indication"]  
+        mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.csv')
+
+        test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, mrr_file)
+
+        logging.info(f"Final Test MRR with best model: {test_mrr}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
