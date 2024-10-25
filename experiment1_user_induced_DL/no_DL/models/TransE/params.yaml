@@ -26,5 +26,5 @@ training:
   max_epochs: 1000              
   batch_size: 4096     
   eval_interval: 20
-  eval_batch_size: 64
+  eval_batch_size: 40
   patience: 20
