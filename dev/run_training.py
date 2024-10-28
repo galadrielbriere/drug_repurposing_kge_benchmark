@@ -25,7 +25,7 @@ import csv
 import matplotlib.pyplot as plt
 import TransGNN
 import DistGNN
-
+import pandas as pd
 
 from torchkge.utils.datasets import load_fb15k
 
@@ -84,24 +84,27 @@ def main(args):
     if run_training or run_plot or run_eval:
         train_model(kg_train, kg_val, kg_test, config)
 
-def plot_learning_curves(train_losses, val_mrrs, config):
-    epochs = range(1, len(train_losses) + 1)
-    
-    # Courbe de la perte d'entraînement
-    plt.figure()
-    plt.plot(epochs, train_losses, label='Training Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training Loss Over Time')
+
+def plot_learning_curves(training_metrics_file, config):
+    df = read_training_metrics(training_metrics_file)
+
+    plt.figure(figsize=(12, 5))
+
+    # Plot pour la perte d'entraînement
+    plt.subplot(1, 2, 1)
+    plt.plot(df['Epoch'], df['Training Loss'], label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Training Loss')
+    plt.title('Training Loss over Epochs')
     plt.legend()
     plt.savefig(os.path.join(config['common']['out'], 'training_loss_curve.png'))
-    
-    # Courbe du MRR sur validation
-    plt.figure()
-    plt.plot(epochs, val_mrrs, label='Validation MRR')
-    plt.xlabel('Epochs')
-    plt.ylabel('MRR')
-    plt.title('Validation MRR Over Time')
+
+    # Plot pour le MRR de validation
+    plt.subplot(1, 2, 2)
+    plt.plot(df['Epoch'], df['Validation MRR'], label='Validation MRR')
+    plt.xlabel('Epoch')
+    plt.ylabel('Validation MRR')
+    plt.title('Validation MRR over Epochs')
     plt.legend()
     plt.savefig(os.path.join(config['common']['out'], 'validation_mrr_curve.png'))
 
@@ -430,6 +433,18 @@ def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, ou
 
     return total_mrr
 
+def read_training_metrics(training_metrics_file):
+    df = pd.read_csv(training_metrics_file)
+
+    df = df[~df['Epoch'].astype(str).str.contains('CHECKPOINT RESTART')]
+
+    df['Epoch'] = df['Epoch'].astype(int)
+    df = df.sort_values(by='Epoch')
+
+    df = df.drop_duplicates(subset=['Epoch'], keep='last')
+
+    return df
+
 def train_model(kg_train, kg_val, kg_test, config):
 
     run_training = config['common'].get('run_training', True)
@@ -461,7 +476,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     learning_rates = []
     resume_checkpoint = config['training'].get('resume_checkpoint', None)
 
-    if not resume_checkpoint:
+    if not resume_checkpoint and run_training:
         with open(training_metrics_file, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Epoch', 'Training Loss', 'Validation MRR', 'Learning Rate'])  
@@ -712,7 +727,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Report metrics
     #################
     if plot_training_metrics:
-        plot_learning_curves(train_losses, val_mrrs, config)
+        plot_learning_curves(training_metrics_file, config)
 
     #################
     # Evaluation on test set
