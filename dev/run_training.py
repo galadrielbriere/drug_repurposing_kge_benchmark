@@ -66,7 +66,12 @@ def main(args):
     logging.info(f"Output folder: {config['common']['out']}")
 
 
-    if config["common"]['run_kg_prep']:
+    run_kg_prep =  config['common'].get('run_kg_prep', True)
+    run_training =  config['common'].get('run_evaluation', True)
+    run_plot =  config['common'].get('plot_training_metrics', True)
+    run_eval =  config['common'].get('run_evaluation', True)
+
+    if run_kg_prep:
             logging.info(f"Preparing KG...")
             kg_train, kg_val, kg_test = prepare_knowledge_graph(config)
     else:
@@ -76,7 +81,7 @@ def main(args):
 
     # kg_train, kg_val, kg_test = load_fb15k()
 
-    if config['common']['run_training']:
+    if run_training or run_plot or run_eval:
         train_model(kg_train, kg_val, kg_test, config)
 
 def plot_learning_curves(train_losses, val_mrrs, config):
@@ -427,6 +432,10 @@ def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, ou
 
 def train_model(kg_train, kg_val, kg_test, config):
 
+    run_training = config['common'].get('run_training', True)
+    plot_training_metrics = config['common'].get('plot_training_metrics', True)
+    run_eval = config['common'].get('run_evaluation', True)
+
     #################
     # Initialization
     #################
@@ -695,13 +704,13 @@ def train_model(kg_train, kg_val, kg_test, config):
             logging.info(f"Checkpoint file {resume_checkpoint} does not exist. Starting training from scratch.")
             trainer.run(train_iterator, max_epochs=config['training']['max_epochs'])
     else:
-        trainer.run(train_iterator, max_epochs=config['training']['max_epochs'])
+        if run_training:
+            trainer.run(train_iterator, max_epochs=config['training']['max_epochs'])
 
 
     #################
     # Report metrics
     #################
-    plot_training_metrics = config['common'].get('plot_training_metrics', True)
     if plot_training_metrics:
         plot_learning_curves(train_losses, val_mrrs, config)
 
@@ -721,7 +730,7 @@ def train_model(kg_train, kg_val, kg_test, config):
 
     # print_gpu_memory("Before clearing variables")
 
-    if config["common"]["run_evaluation"]:
+    if run_eval:
         model.to("cpu")
         del model
         model = None
