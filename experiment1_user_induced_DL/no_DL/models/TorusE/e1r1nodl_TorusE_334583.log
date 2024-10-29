@@ -1,0 +1,154 @@
+2024-10-23 14:57:02,762 - WARNING - /linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/handlers/checkpoint.py:16: DeprecationWarning: `TorchScript` support for functional optimizers is deprecated and will be removed in a future PyTorch release. Consider using the `torch.compile` optimizer instead.
+  from torch.distributed.optim import ZeroRedundancyOptimizer
+
+2024-10-23 14:57:03,152 - INFO - Configuration loaded:
+{
+    "common": {
+        "seed": 42,
+        "input_pkl": "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/experiment1_user_induced_DL/no_DL/kg_processing/kg.pkl",
+        "out": "./",
+        "verbose": true,
+        "run_kg_prep": false,
+        "run_training": true,
+        "run_evaluation": false
+    },
+    "model": {
+        "name": "TorusE",
+        "emb_dim": 200,
+        "margin": 1
+    },
+    "sampler": {
+        "name": "Mixed",
+        "n_neg": 5
+    },
+    "optimizer": {
+        "name": "Adam",
+        "params": {
+            "lr": 0.001,
+            "weight_decay": 0.001
+        }
+    },
+    "training": {
+        "max_epochs": 1000,
+        "batch_size": 4096,
+        "eval_interval": 20,
+        "eval_batch_size": 64,
+        "patience": 20
+    }
+}
+2024-10-23 14:57:03,152 - INFO - Setting number of threads to 3
+2024-10-23 14:57:03,458 - INFO - Loading parameters from params.yaml
+2024-10-23 14:57:03,458 - INFO - Output folder: ./
+2024-10-23 14:57:03,459 - INFO - Loading KG...
+2024-10-23 14:57:03,459 - INFO - Will not run the preparation step. Using KG stored in: /lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/experiment1_user_induced_DL/no_DL/kg_processing/kg.pkl
+2024-10-23 14:57:57,426 - INFO - Done
+2024-10-23 14:57:57,427 - INFO - Detected device: cuda
+2024-10-23 14:57:57,439 - INFO - Initializing model...
+2024-10-23 14:57:57,439 - WARNING - /lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py:124: UserWarning: The 'dissimilarity' field is missing for model TorusE. Defaulting to 'torus_L2'.
+  warnings.warn(f"The 'dissimilarity' field is missing for model {model_name}. Defaulting to 'torus_L2'.")
+
+2024-10-23 14:57:58,931 - INFO - Optimizer 'Adam' initialized with parameters: {'lr': 0.001, 'weight_decay': 0.001}
+2024-10-23 14:57:58,931 - INFO - Initializing sampler...
+2024-10-23 14:58:55,959 - WARNING - /lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py:293: UserWarning: No learning rate scheduler specified in the configuration.
+  warnings.warn("No learning rate scheduler specified in the configuration.")
+
+2024-10-23 14:58:55,984 - INFO - Number of training batches: 1009
+2024-10-23 14:58:55,996 - INFO - Engine run starting with max_epochs=1000.
+2024-10-23 15:01:11,533 - INFO - Epoch 1 - Train Loss: 5187.009663292524, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:01:19,060 - INFO - Memory cleaned.
+2024-10-23 15:01:19,682 - INFO - Epoch[1] Complete. Time taken: 00:02:23.686
+2024-10-23 15:03:33,086 - INFO - Epoch 2 - Train Loss: 3214.1484894885293, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:03:39,593 - INFO - Memory cleaned.
+2024-10-23 15:03:40,292 - INFO - Epoch[2] Complete. Time taken: 00:02:20.610
+2024-10-23 15:05:53,472 - INFO - Epoch 3 - Train Loss: 2269.3294688176766, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:05:59,968 - INFO - Memory cleaned.
+2024-10-23 15:06:00,632 - INFO - Epoch[3] Complete. Time taken: 00:02:20.341
+2024-10-23 15:08:13,839 - INFO - Epoch 4 - Train Loss: 1747.5287992773756, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:08:20,337 - INFO - Memory cleaned.
+2024-10-23 15:08:21,006 - INFO - Epoch[4] Complete. Time taken: 00:02:20.374
+2024-10-23 15:10:34,271 - INFO - Epoch 5 - Train Loss: 1408.207789011643, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:10:40,774 - INFO - Memory cleaned.
+2024-10-23 15:10:41,462 - INFO - Epoch[5] Complete. Time taken: 00:02:20.456
+2024-10-23 15:12:54,725 - INFO - Epoch 6 - Train Loss: 1209.0005933515813, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:13:01,222 - INFO - Memory cleaned.
+2024-10-23 15:13:01,883 - INFO - Epoch[6] Complete. Time taken: 00:02:20.421
+2024-10-23 15:15:15,217 - INFO - Epoch 7 - Train Loss: 1095.4308374112406, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:15:21,715 - INFO - Memory cleaned.
+2024-10-23 15:15:22,378 - INFO - Epoch[7] Complete. Time taken: 00:02:20.495
+2024-10-23 15:17:35,708 - INFO - Epoch 8 - Train Loss: 1054.6926344905842, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:17:42,202 - INFO - Memory cleaned.
+2024-10-23 15:17:42,847 - INFO - Epoch[8] Complete. Time taken: 00:02:20.469
+2024-10-23 15:19:56,208 - INFO - Epoch 9 - Train Loss: 1008.3759910841385, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:20:02,716 - INFO - Memory cleaned.
+2024-10-23 15:20:03,394 - INFO - Epoch[9] Complete. Time taken: 00:02:20.547
+2024-10-23 15:22:16,689 - INFO - Epoch 10 - Train Loss: 1015.3679024299698, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:22:23,199 - INFO - Memory cleaned.
+2024-10-23 15:22:23,890 - INFO - Epoch[10] Complete. Time taken: 00:02:20.495
+2024-10-23 15:24:37,290 - INFO - Epoch 11 - Train Loss: 1042.3788971017302, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:24:43,782 - INFO - Memory cleaned.
+2024-10-23 15:24:44,478 - INFO - Epoch[11] Complete. Time taken: 00:02:20.588
+2024-10-23 15:26:57,904 - INFO - Epoch 12 - Train Loss: 1010.5900372263708, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:27:04,403 - INFO - Memory cleaned.
+2024-10-23 15:27:05,095 - INFO - Epoch[12] Complete. Time taken: 00:02:20.616
+2024-10-23 15:29:18,488 - INFO - Epoch 13 - Train Loss: 965.2052904887136, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:29:24,971 - INFO - Memory cleaned.
+2024-10-23 15:29:25,630 - INFO - Epoch[13] Complete. Time taken: 00:02:20.535
+2024-10-23 15:31:39,012 - INFO - Epoch 14 - Train Loss: 976.8312011720842, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:31:45,495 - INFO - Memory cleaned.
+2024-10-23 15:31:46,156 - INFO - Epoch[14] Complete. Time taken: 00:02:20.525
+2024-10-23 15:33:59,581 - INFO - Epoch 15 - Train Loss: 1038.4875409028612, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:34:06,074 - INFO - Memory cleaned.
+2024-10-23 15:34:06,766 - INFO - Epoch[15] Complete. Time taken: 00:02:20.610
+2024-10-23 15:36:20,161 - INFO - Epoch 16 - Train Loss: 997.2729360644207, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:36:26,651 - INFO - Memory cleaned.
+2024-10-23 15:36:27,313 - INFO - Epoch[16] Complete. Time taken: 00:02:20.546
+2024-10-23 15:38:40,766 - INFO - Epoch 17 - Train Loss: 991.3201450867604, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:38:47,257 - INFO - Memory cleaned.
+2024-10-23 15:38:47,947 - INFO - Epoch[17] Complete. Time taken: 00:02:20.635
+2024-10-23 15:41:01,304 - INFO - Epoch 18 - Train Loss: 1022.9233317554855, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:41:07,804 - INFO - Memory cleaned.
+2024-10-23 15:41:08,471 - INFO - Epoch[18] Complete. Time taken: 00:02:20.523
+2024-10-23 15:43:21,665 - INFO - Epoch 19 - Train Loss: 1004.5650281454773, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:43:28,151 - INFO - Memory cleaned.
+2024-10-23 15:43:28,836 - INFO - Epoch[19] Complete. Time taken: 00:02:20.365
+2024-10-23 15:45:42,065 - INFO - Epoch 20 - Train Loss: 1015.4521084036381, Validation MRR: 0, Learning Rate: 0.001
+2024-10-23 15:45:48,555 - INFO - Memory cleaned.
+2024-10-23 15:45:48,555 - INFO - Evaluating on validation set at epoch 20...
+Link prediction evaluation:   0%|          | 0/9036 [00:00<?, ?batch/s]Link prediction evaluation:   0%|          | 0/9036 [00:01<?, ?batch/s]
+2024-10-23 15:45:50,047 - ERROR - Engine run is terminating due to exception: CUDA out of memory. Tried to allocate 6.39 GiB. GPU 0 has a total capacity of 31.73 GiB of which 5.28 GiB is free. Including non-PyTorch memory, this process has 26.45 GiB memory in use. Of the allocated memory 19.75 GiB is allocated by PyTorch, and 6.34 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+Traceback (most recent call last):
+  File "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py", line 675, in <module>
+    main(args)
+  File "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py", line 79, in main
+    train_model(kg_train, kg_val, kg_test, config)
+  File "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py", line 626, in train_model
+    trainer.run(train_iterator, max_epochs=config['training']['max_epochs'])
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 889, in run
+    return self._internal_run()
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 932, in _internal_run
+    return next(self._internal_run_generator)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 990, in _internal_run_as_gen
+    self._handle_exception(e)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 644, in _handle_exception
+    raise e
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 962, in _internal_run_as_gen
+    self._fire_event(Events.EPOCH_COMPLETED)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 431, in _fire_event
+    func(*first, *(event_args + others), **kwargs)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/ignite/engine/engine.py", line 254, in wrapper
+    return handler(*args, **kwargs)
+  File "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py", line 475, in evaluate
+    val_mrr = link_pred(model, kg_val, eval_batch_size) 
+  File "/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/dev/run_training.py", line 351, in link_pred
+    evaluator.evaluate(b_size=batch_size, verbose=True)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/torchkge/evaluation.py", line 297, in evaluate
+    scores = self.model.inference_scoring_function(candidates, t_emb, r_emb)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/torchkge/models/interfaces.py", line 260, in inference_scoring_function
+    return - self.dissimilarity(proj_h + r_, t_)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/torchkge/utils/dissimilarities.py", line 43, in l2_torus_dissimilarity
+    return 4 * min((a - b) ** 2, 1 - (a - b) ** 2).sum(dim=-1)
+  File "/linkhome/rech/genuyp01/ufq76hz/.conda/envs/torch_pyg/lib/python3.10/site-packages/torch/_tensor.py", line 39, in wrapped
+    return f(*args, **kwargs)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.39 GiB. GPU 0 has a total capacity of 31.73 GiB of which 5.28 GiB is free. Including non-PyTorch memory, this process has 26.45 GiB memory in use. Of the allocated memory 19.75 GiB is allocated by PyTorch, and 6.34 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+srun: error: r8i5n8: task 0: Exited with exit code 1
+srun: Terminating StepId=334583.0
