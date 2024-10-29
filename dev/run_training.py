@@ -769,8 +769,8 @@ def train_model(kg_train, kg_val, kg_test, config):
         logging.info("Best model successfully loaded.")
         logging.info("Evaluating on the test set with best model...")
 
-        list_rel_1 = ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
-        list_rel_2 = ["indication"]  
+        list_rel_1 = config['evaluation'].get('made_directed_relations', [])
+        list_rel_2 = config['evaluation'].get('target_relations', [])
         mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.yaml')
 
         test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, mrr_file)
