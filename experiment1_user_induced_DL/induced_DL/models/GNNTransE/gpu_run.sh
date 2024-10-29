@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -A rnk@v100
+#SBATCH -A rnk@a100
 #SBATCH --job-name=e1r1dl_GNNTransE
 #SBATCH --gres=gpu:1
 #SBATCH --time=20:00:00
