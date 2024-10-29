@@ -538,10 +538,10 @@ def train_model(kg_train, kg_val, kg_test, config):
     #################
     if config["model"]['name'] in ["TransEModelWithGCN", "DistMultModelWithGCN"]:
         total_batches = len(train_iterator)
-        @trainer.on(Events.ITERATION_COMPLETED(every=1))
+        @trainer.on(Events.ITERATION_COMPLETED(every=20))
         def log_batch_progress(engine):
             current_batch = engine.state.iteration
-            logging.info(f'Processing batch {current_batch}/{total_batches}')
+            logging.info(f'Processed {current_batch} batches out of {total_batches}')
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_metrics_to_csv(engine):
