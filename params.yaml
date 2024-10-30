@@ -69,3 +69,8 @@ training:
   batch_size: 2048     
   eval_interval: 10
   eval_batch_size: 32
+
+evaluation:
+  made_directed_relations: ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
+  target_relations: ["indication"]
+  
