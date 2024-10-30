@@ -1,0 +1,73 @@
+Global_MRR: 0.1105894481
+List_1:
+  MRR_Average: 0.0743983239
+  disease_disease:
+    MRR: 0.0774
+  disease_disease_inv:
+    Error: Relation not found in KG
+  drug_drug:
+    MRR: 0.1217
+  drug_drug_inv:
+    Error: Relation not found in KG
+  protein_protein:
+    MRR: 0.0241
+  protein_protein_inv:
+    Error: Relation not found in KG
+List_2:
+  MRR_Average: 0.0917201564
+  indication:
+    MRR: 0.0917
+Remaining_Relations:
+  MRR_Average: 0.1069066671
+  anatomy_anatomy:
+    MRR: 0.0023
+  bioprocess_bioprocess:
+    MRR: 0.0467
+  cellcomp_cellcomp:
+    MRR: 0.0574
+  contraindication:
+    MRR: 0.0799
+  disease_phenotype_negative:
+    MRR: 0.0789
+  disease_phenotype_positive:
+    MRR: 0.0419
+  disease_protein:
+    MRR: 0.0586
+  drug_effect:
+    MRR: 0.1067
+  drug_protein:
+    MRR: 0.0506
+  exposure_bioprocess:
+    MRR: 0.118
+  exposure_cellcomp:
+    MRR: 0.0031
+  exposure_disease:
+    MRR: 0.1392
+  exposure_exposure:
+    MRR: 0.2555
+  exposure_molfunc:
+    MRR: 0.3266
+  exposure_protein:
+    MRR: 0.1253
+  molfunc_molfunc:
+    MRR: 0.0804
+  off-label use:
+    MRR: 0.0788
+  pathway_pathway:
+    MRR: 0.0838
+  phenotype_phenotype:
+    MRR: 0.0351
+  phenotype_protein:
+    MRR: 0.0867
+  protein_absent_anatomy:
+    MRR: 0.1794
+  protein_bioprocess:
+    MRR: 0.0406
+  protein_cellcomp:
+    MRR: 0.1136
+  protein_molfunc:
+    MRR: 0.103
+  protein_pathway:
+    MRR: 0.1461
+  protein_present_anatomy:
+    MRR: 0.3412
