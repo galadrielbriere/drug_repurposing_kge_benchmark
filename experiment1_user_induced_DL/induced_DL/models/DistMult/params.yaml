@@ -6,6 +6,7 @@ common:
   run_kg_prep: false
   run_training: true
   run_evaluation: false
+  plot_training_metrics: true
 
 model:
   name: "DistMult"               
