@@ -5,6 +5,7 @@ common:
   run_kg_prep: true
   run_training: false
   run_evaluation: false
+  plot_training_metrics: false
 
 clean_kg:   
   remove_duplicates_triplets: true 

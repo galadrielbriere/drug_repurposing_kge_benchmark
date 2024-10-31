@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import TransGNN
 import DistGNN
 import pandas as pd
+import networkx as nx
 
 from torchkge.utils.datasets import load_fb15k
 
@@ -362,7 +363,7 @@ def link_pred(model, kg, batch_size):
     test_mrr = evaluator.mrr()[1]
     return test_mrr
 
-def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, output_file):
+def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, eval_batch_size, output_file):
     results = {
         "List_1": {},
         "List_2": {},
@@ -393,7 +394,7 @@ def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, ou
                 relation_index = kg_test.rel2ix[relation_name]
                 indices_to_keep = torch.nonzero(kg_test.relations == relation_index, as_tuple=False).squeeze()
                 new_kg = kg_test.keep_triples(indices_to_keep)
-                test_mrr = link_pred(model, new_kg, 32)
+                test_mrr = link_pred(model, new_kg, eval_batch_size)
                 mrr_sum += test_mrr
                 count += 1
 
@@ -432,6 +433,87 @@ def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, ou
     logging.info(f"Results saved to {output_file}")
 
     return total_mrr
+
+# def compute_degrees(graph, nodes):
+#     degrees = []
+#     for node in nodes:
+#         if graph.has_node(node):
+#             degrees.append(graph.degree(node))
+#         else:
+#             degrees.append(0) 
+#     return degrees
+
+
+# def calculate_mrr_by_degree(model, kg_train, kg_test, relation_interest, threshold, eval_batch_size, out_file):
+#     results = {
+#         "Head_Degree_Greater": {"MRR": None, "Count": 0},
+#         "Head_Degree_Less": {"MRR": None, "Count": 0},
+#         "Tail_Degree_Greater": {"MRR": None, "Count": 0},
+#         "Tail_Degree_Less": {"MRR": None, "Count": 0}
+#     }
+
+#     # Construire le graphe `G` pour kg_train
+#     kg_train_df = kg_train.get_df()
+#     G = nx.DiGraph()
+#     for _, row in kg_train_df[kg_train_df['rel'] == relation_interest].iterrows():
+#         G.add_edge(row['from'], row['to'])
+
+#     # Calculer les degrés dans kg_train pour les nœuds head et tail de la relation d'intérêt
+#     head_degrees = compute_degrees(G, kg_test.get_df()['from'])
+#     tail_degrees = compute_degrees(G, kg_test.get_df()['to'])
+
+#     # Séparer les triplets de kg_test en fonction des seuils de degré pour head et tail
+#     kg_test_df = kg_test.get_df()
+#     test_triplets = kg_test_df[kg_test_df['rel'] == relation_interest]
+
+#     # Initialiser les listes pour chaque cas
+#     head_greater, head_less, tail_greater, tail_less = [], [], [], []
+
+#     # Séparer les triplets en fonction des degrés
+#     for i, (head, tail) in enumerate(zip(test_triplets['from'], test_triplets['to'])):
+#         if head_degrees[i] > threshold:
+#             head_greater.append((head, tail))
+#         else:
+#             head_less.append((head, tail))
+
+#         if tail_degrees[i] > threshold:
+#             tail_greater.append((head, tail))
+#         else:
+#             tail_less.append((head, tail))
+
+#     # Enregistrer le nombre de triplets dans chaque groupe
+#     results["Head_Degree_Greater"]["Count"] = len(head_greater)
+#     results["Head_Degree_Less"]["Count"] = len(head_less)
+#     results["Tail_Degree_Greater"]["Count"] = len(tail_greater)
+#     results["Tail_Degree_Less"]["Count"] = len(tail_less)
+
+#     # Calculer les MRR pour chaque cas
+#     def calculate_mrr(triplets):
+#         if not triplets:
+#             return 0.0
+#         # Créer un sous-KG pour les triplets spécifiés
+#         indices_to_keep = torch.tensor([i for i, (h, t) in enumerate(zip(kg_test.relations, kg_test.head_idx, kg_test.tail_idx))
+#                                         if (h, t) in triplets], dtype=torch.long)
+#         new_kg = kg_test.keep_triples(indices_to_keep)
+#         return link_pred(model, new_kg, eval_batch_size)
+
+#     # Calculer les MRR pour chaque groupe
+#     results["Head_Degree_Greater"]["MRR"] = round(calculate_mrr(head_greater), 10)
+#     results["Head_Degree_Less"]["MRR"] = round(calculate_mrr(head_less), 10)
+#     results["Tail_Degree_Greater"]["MRR"] = round(calculate_mrr(tail_greater), 10)
+#     results["Tail_Degree_Less"]["MRR"] = round(calculate_mrr(tail_less), 10)
+
+#     # Log des résultats
+#     for group, result in results.items():
+#         logging.info(f"{group} - MRR: {result['MRR']:.4f}, Count: {result['Count']}")
+
+#     # Sauvegarder les résultats dans un fichier YAML
+#     with open(out_file, "w") as yaml_file:
+#         yaml.dump(results, yaml_file, default_flow_style=False)
+
+#     logging.info(f"Results saved to {out_file}")
+
+#     return results
 
 def read_training_metrics(training_metrics_file):
     df = pd.read_csv(training_metrics_file)
@@ -769,14 +851,20 @@ def train_model(kg_train, kg_val, kg_test, config):
         logging.info("Best model successfully loaded.")
         logging.info("Evaluating on the test set with best model...")
 
-        list_rel_1 = config['evaluation'].get('made_directed_relations', [])
-        list_rel_2 = config['evaluation'].get('target_relations', [])
+        list_rel_1 = config.get('evaluation', {}).get('made_directed_relations', [])
+        list_rel_2 = config.get('evaluation', {}).get('target_relations', [])
         mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.yaml')
 
-        test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, mrr_file)
+        test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, eval_batch_size, mrr_file)
 
         logging.info(f"Final Test MRR with best model: {test_mrr}")
-  
+
+    # run_eval_by_degree = config.get('evaluation_by_degree', {})
+    # if run_eval and run_eval_by_degree:
+    #     relation_interest = config["evaluation_by_degree"]["relation"]
+    #     threshold = config["evaluation_by_degree"].get('threshold', 1)
+    #     mrr_file_deg = os.path.join(config['common']['out'], f'evaluation_metrics_{relation_interest}_threshold_{threshold}.yaml')
+    #     calculate_mrr_by_degree(model, kg_train, kg_test, relation_interest, threshold, eval_batch_size, mrr_file_deg)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

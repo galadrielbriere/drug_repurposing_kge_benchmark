@@ -5,7 +5,8 @@ common:
   verbose: true
   run_kg_prep: false
   run_training: true
-  run_evaluation: false
+  run_evaluation: true
+  plot_training_metrics: true
 
 model:
   name: "ComplEx"               
@@ -23,8 +24,12 @@ optimizer:
     weight_decay: 0.001                        
 
 training:
-  max_epochs: 1000              
+  max_epochs: 500              
   batch_size: 4096     
   eval_interval: 20
   eval_batch_size: 64
-  patience: 20
+  patience: 10
+
+evaluation:
+  made_directed_relations: ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
+  target_relations: ["indication"]

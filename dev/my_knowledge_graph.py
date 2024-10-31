@@ -366,104 +366,6 @@ class KnowledgeGraph(Dataset):
         else:
             return mask, ~mask
 
-    def keep_triples(self, indices_to_keep):
-        """
-        Keeps only the specified triples in the knowledge graph and returns a new
-        KnowledgeGraph instance with these triples.
-
-        Parameters
-        ----------
-        indices_to_keep : list or torch.Tensor
-            Indices of triples to keep in the knowledge graph.
-
-        Returns
-        -------
-        KnowledgeGraph
-            A new instance of KnowledgeGraph with only the specified triples.
-        """
-        # Create masks for indices to keep
-        mask = torch.zeros(self.n_facts, dtype=torch.bool)
-        mask[indices_to_keep] = True
-        
-        # Use the mask to filter the triples to keep
-        new_heads = self.head_idx[mask]
-        new_tails = self.tail_idx[mask]
-        new_relations = self.relations[mask]
-
-        # Create a new KnowledgeGraph instance
-        return KnowledgeGraph(
-            kg={'heads': new_heads, 'tails': new_tails, 'relations': new_relations},
-            ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix,
-            dict_of_heads=self.dict_of_heads,
-            dict_of_tails=self.dict_of_tails,
-            dict_of_rels=self.dict_of_rels
-        )
-
-    def remove_triples(self, indices_to_remove):
-        """
-        Removes specified triples from the knowledge graph and returns a new
-        KnowledgeGraph instance without these triples.
-
-        Parameters
-        ----------
-        indices_to_remove : list or torch.Tensor
-            Indices of triples to remove from the knowledge graph.
-
-        Returns
-        -------
-        KnowledgeGraph
-            A new instance of KnowledgeGraph without the specified triples.
-        """
-        # Create masks for indices not to remove
-        mask = torch.ones(self.n_facts, dtype=torch.bool)
-        mask[indices_to_remove] = False
-        
-        # Use the mask to filter out the triples
-        new_heads = self.head_idx[mask]
-        new_tails = self.tail_idx[mask]
-        new_relations = self.relations[mask]
-
-        # Create a new KnowledgeGraph instance
-        return KnowledgeGraph(
-            kg={'heads': new_heads, 'tails': new_tails, 'relations': new_relations},
-            ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix,
-            dict_of_heads=self.dict_of_heads,
-            dict_of_tails=self.dict_of_tails,
-            dict_of_rels=self.dict_of_rels
-        )
-    
-    def duplicate_triples(self, indices_to_duplicate):
-        """
-        Duplicates specified triples in the knowledge graph and returns a new
-        KnowledgeGraph instance with these duplicates.
-
-        Parameters
-        ----------
-        indices_to_duplicate : list or torch.Tensor
-            Indices of triples to duplicate in the knowledge graph.
-
-        Returns
-        -------
-        KnowledgeGraph
-            A new instance of KnowledgeGraph with the specified triples duplicated.
-        """
-        # Créer des tensors additionnels pour les indices à dupliquer
-        duplicated_heads = torch.cat((self.head_idx, self.head_idx[indices_to_duplicate]))
-        duplicated_tails = torch.cat((self.tail_idx, self.tail_idx[indices_to_duplicate]))
-        duplicated_relations = torch.cat((self.relations, self.relations[indices_to_duplicate]))
-
-        # Créer une nouvelle instance de KnowledgeGraph avec les triplets dupliqués
-        return KnowledgeGraph(
-            kg={'heads': duplicated_heads, 'tails': duplicated_tails, 'relations': duplicated_relations},
-            ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix,
-            dict_of_heads=self.dict_of_heads,
-            dict_of_tails=self.dict_of_tails,
-            dict_of_rels=self.dict_of_rels
-        )
-
     @staticmethod
     def get_sizes(count, share, validation=False):
         """With `count` samples, returns how many should go to train and test
@@ -530,6 +432,98 @@ class KnowledgeGraph(Dataset):
 
         return df
     
+
+    def keep_triples(self, indices_to_keep):
+        """
+        Keeps only the specified triples in the knowledge graph and returns a new
+        KnowledgeGraph instance with these triples.
+
+        Parameters
+        ----------
+        indices_to_keep : list or torch.Tensor
+            Indices of triples to keep in the knowledge graph.
+
+        Returns
+        -------
+        KnowledgeGraph
+            A new instance of KnowledgeGraph with only the specified triples.
+        """
+        # Create masks for indices to keep
+        mask = torch.zeros(self.n_facts, dtype=torch.bool)
+        mask[indices_to_keep] = True
+        
+        # Use the mask to filter the triples to keep
+        new_heads = self.head_idx[mask]
+        new_tails = self.tail_idx[mask]
+        new_relations = self.relations[mask]
+
+
+        # Create a new KnowledgeGraph instance
+        return KnowledgeGraph(
+            kg={'heads': new_heads, 'tails': new_tails, 'relations': new_relations},
+            ent2ix=self.ent2ix,
+            rel2ix=self.rel2ix
+        )
+
+    def remove_triples(self, indices_to_remove):
+        """
+        Removes specified triples from the knowledge graph and returns a new
+        KnowledgeGraph instance without these triples.
+
+        Parameters
+        ----------
+        indices_to_remove : list or torch.Tensor
+            Indices of triples to remove from the knowledge graph.
+
+        Returns
+        -------
+        KnowledgeGraph
+            A new instance of KnowledgeGraph without the specified triples.
+        """
+        # Create masks for indices not to remove
+        mask = torch.ones(self.n_facts, dtype=torch.bool)
+        mask[indices_to_remove] = False
+        
+        # Use the mask to filter out the triples
+        new_heads = self.head_idx[mask]
+        new_tails = self.tail_idx[mask]
+        new_relations = self.relations[mask]
+
+
+        # Create a new KnowledgeGraph instance
+        return KnowledgeGraph(
+            kg={'heads': new_heads, 'tails': new_tails, 'relations': new_relations},
+            ent2ix=self.ent2ix,
+            rel2ix=self.rel2ix
+        )
+    
+    def duplicate_triples(self, indices_to_duplicate):
+        """
+        Duplicates specified triples in the knowledge graph and returns a new
+        KnowledgeGraph instance with these duplicates.
+
+        Parameters
+        ----------
+        indices_to_duplicate : list or torch.Tensor
+            Indices of triples to duplicate in the knowledge graph.
+
+        Returns
+        -------
+        KnowledgeGraph
+            A new instance of KnowledgeGraph with the specified triples duplicated.
+        """
+        # Créer des tensors additionnels pour les indices à dupliquer
+        duplicated_heads = torch.cat((self.head_idx, self.head_idx[indices_to_duplicate]))
+        duplicated_tails = torch.cat((self.tail_idx, self.tail_idx[indices_to_duplicate]))
+        duplicated_relations = torch.cat((self.relations, self.relations[indices_to_duplicate]))
+
+        # Créer une nouvelle instance de KnowledgeGraph avec les triplets dupliqués
+        return KnowledgeGraph(
+            kg={'heads': duplicated_heads, 'tails': duplicated_tails, 'relations': duplicated_relations},
+            ent2ix=self.ent2ix,
+            rel2ix=self.rel2ix
+        )
+    
     def add_inverse_relations(self, undirected_relations):
         """
         Ajoute des triplets inverses pour les relations non dirigées spécifiées dans le graphe de connaissances.
@@ -585,10 +579,7 @@ class KnowledgeGraph(Dataset):
         return KnowledgeGraph(
             kg={'heads': self.head_idx, 'tails': self.tail_idx, 'relations': self.relations},
             ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix,
-            dict_of_heads=self.dict_of_heads,
-            dict_of_tails=self.dict_of_tails,
-            dict_of_rels=self.dict_of_rels
+            rel2ix=self.rel2ix
         )
     
     def add_triples(self, new_triples):
@@ -624,18 +615,15 @@ class KnowledgeGraph(Dataset):
         updated_tail_idx = torch.cat((self.tail_idx, new_triples[:, 1]), dim=0)
         updated_relations = torch.cat((self.relations, new_triples[:, 2]), dim=0)
 
-        # Mettre à jour dict_of_heads, dict_of_tails, dict_of_rels
-        for h, t, r in new_triples.tolist():
-            self.dict_of_heads[(t, r)].add(h)
-            self.dict_of_tails[(h, r)].add(t)
-            self.dict_of_rels[(h, t)].add(r)
+        # # Mettre à jour dict_of_heads, dict_of_tails, dict_of_rels
+        # for h, t, r in new_triples.tolist():
+        #     self.dict_of_heads[(t, r)].add(h)
+        #     self.dict_of_tails[(h, r)].add(t)
+        #     self.dict_of_rels[(h, t)].add(r)
 
         # Créer une nouvelle instance de KnowledgeGraph avec les triplets mis à jour
         return KnowledgeGraph(
             kg={'heads': updated_head_idx, 'tails': updated_tail_idx, 'relations': updated_relations},
             ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix,
-            dict_of_heads=self.dict_of_heads,
-            dict_of_tails=self.dict_of_tails,
-            dict_of_rels=self.dict_of_rels
+            rel2ix=self.rel2ix
         )

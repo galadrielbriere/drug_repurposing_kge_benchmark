@@ -94,10 +94,7 @@ def add_inverse_relations(kg, undirected_relations):
     kg = KnowledgeGraph(
         kg={'heads': kg.head_idx, 'tails': kg.tail_idx, 'relations': kg.relations},
         ent2ix=kg.ent2ix,
-        rel2ix=kg.rel2ix,
-        dict_of_heads=kg.dict_of_heads,
-        dict_of_tails=kg.dict_of_tails,
-        dict_of_rels=kg.dict_of_rels
+        rel2ix=kg.rel2ix
     )
 
     return kg, reverse_list
@@ -217,9 +214,6 @@ def permute_tails(kg, relation_id):
         kg={'heads': new_head_idx, 'tails': new_tail_idx, 'relations': new_relations},
         ent2ix=kg.ent2ix,
         rel2ix=kg.rel2ix,
-        dict_of_heads=kg.dict_of_heads,
-        dict_of_tails=kg.dict_of_tails,
-        dict_of_rels=kg.dict_of_rels
     )
 
 def ensure_entity_coverage(kg_train, kg_val, kg_test):
