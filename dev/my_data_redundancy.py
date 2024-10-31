@@ -255,53 +255,52 @@ def ensure_entity_coverage(kg_train, kg_val, kg_test):
     logging.info(f"Entities present in kg_train: {len(present_entities)}")
     logging.info(f"Missing entities in kg_train: {len(missing_entities)}")
 
-    for entity in missing_entities:
-        # Chercher un triplet impliquant l'entité dans kg_val
-        triplet_found = False
-        triplet = None
-        source_kg = None
+    def find_and_move_triplets(source_kg, entities):
+        nonlocal kg_train, kg_val, kg_test
 
-        # Fonction utilitaire pour trouver et extraire un triplet
-        def find_and_move_triplet(source_kg, entity):
-            nonlocal triplet_found, triplet, kg_train, kg_val, kg_test
-            # Chercher les triplets où l'entité est head ou tail
-            mask_head = (source_kg.head_idx == entity)
-            mask_tail = (source_kg.tail_idx == entity)
-            mask = mask_head | mask_tail
+        # Convert `entities` set to a `Tensor` for compatibility with `torch.isin`
+        entities_tensor = torch.tensor(list(entities), dtype=source_kg.head_idx.dtype)
 
-            if mask.any():
-                # Sélectionner un triplet aléatoire impliquant l'entité
-                indices = torch.nonzero(mask, as_tuple=True)[0]
-                selected_idx = indices[torch.randint(0, len(indices), (1,)).item()]
-                triplet = {
-                    'head': source_kg.head_idx[selected_idx].item(),
-                    'tail': source_kg.tail_idx[selected_idx].item(),
-                    'rel': source_kg.relations[selected_idx].item()
-                }
-                # Ajouter le triplet à kg_train
-                kg_train = kg_train.add_triples(
-                    torch.tensor([[triplet['head'], triplet['tail'], triplet['rel']]], dtype=torch.long)
-                )
-                # Supprimer le triplet de source_kg
-                kg_cleaned = source_kg.remove_triples(torch.tensor([selected_idx], dtype=torch.long))
-                if source_kg == kg_val:
-                    kg_val = kg_cleaned
-                else:
-                    kg_test = kg_cleaned
-                triplet_found = True
+        # Create masks for all triplets where the missing entity is present
+        mask_heads = torch.isin(source_kg.head_idx, entities_tensor)
+        mask_tails = torch.isin(source_kg.tail_idx, entities_tensor)
+        mask = mask_heads | mask_tails
 
-        # Premièrement, essayer de trouver dans kg_val
-        find_and_move_triplet(kg_val, entity)
+        if mask.any():
+            # Extract the indices and corresponding triplets
+            indices = torch.nonzero(mask, as_tuple=True)[0]
+            triplets = torch.stack([source_kg.head_idx[indices],
+                                    source_kg.tail_idx[indices],
+                                    source_kg.relations[indices]], dim=1)
 
-        # Si non trouvé dans kg_val, essayer dans kg_test
-        if not triplet_found:
-            find_and_move_triplet(kg_test, entity)
+            # Add the found triplets to kg_train
+            kg_train = kg_train.add_triples(triplets)
 
-        # Si toujours pas trouvé, loguer un avertissement
-        if not triplet_found:
+            # Remove the triplets from source_kg
+            kg_cleaned = source_kg.remove_triples(indices)
+            # if source_kg == kg_val:
+            #     kg_val = kg_cleaned
+            # else:
+            #     kg_test = kg_cleaned
+
+            # Update the list of missing entities
+            entities_in_triplets = set(triplets[:, 0].tolist() + triplets[:, 1].tolist())
+            remaining_entities = entities - set(entities_in_triplets)
+            return remaining_entities, kg_cleaned
+        return entities, kg_cleaned
+
+    # Déplacer les triplets depuis kg_val puis depuis kg_test
+    missing_entities, kg_val = find_and_move_triplets(kg_val, missing_entities)
+    if len(missing_entities) > 0:
+        missing_entities, kg_test = find_and_move_triplets(kg_test, missing_entities)
+
+    # Loguer les entités restantes non trouvées
+    if len(missing_entities) > 0:
+        for entity in missing_entities:
             logging.info(f"Warning: No triplet found involving entity '{entity}' in kg_val or kg_test. Entity remains unconnected in kg_train.")
 
     return kg_train, kg_val, kg_test
+
 
 def clean_datasets(kg1, kg2, known_reverses):
     """

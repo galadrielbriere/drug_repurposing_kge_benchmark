@@ -10,3 +10,4 @@ experiment1_user_induced_DL/**/training_metrics.csv
 experiment1_user_induced_DL/**/*.log
 experiment2_structural_DL/**/training_metrics.csv
 experiment2_structural_DL/**/*.log
+*before_fix

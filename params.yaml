@@ -73,4 +73,7 @@ training:
 evaluation:
   made_directed_relations: ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
   target_relations: ["indication"]
-  
+
+evaluation_by_degree:
+  relation: 'indication'
+  threshold: 1

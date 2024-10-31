@@ -494,93 +494,96 @@ class KnowledgeGraph(Dataset):
         return KnowledgeGraph(
             kg={'heads': new_heads, 'tails': new_tails, 'relations': new_relations},
             ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix
+            rel2ix=self.rel2ix, 
+            dict_of_heads=self.dict_of_heads,
+            dict_of_tails=self.dict_of_tails,
+            dict_of_rels=self.dict_of_rels
         )
     
-    def duplicate_triples(self, indices_to_duplicate):
-        """
-        Duplicates specified triples in the knowledge graph and returns a new
-        KnowledgeGraph instance with these duplicates.
+    # def duplicate_triples(self, indices_to_duplicate):
+    #     """
+    #     Duplicates specified triples in the knowledge graph and returns a new
+    #     KnowledgeGraph instance with these duplicates.
 
-        Parameters
-        ----------
-        indices_to_duplicate : list or torch.Tensor
-            Indices of triples to duplicate in the knowledge graph.
+    #     Parameters
+    #     ----------
+    #     indices_to_duplicate : list or torch.Tensor
+    #         Indices of triples to duplicate in the knowledge graph.
 
-        Returns
-        -------
-        KnowledgeGraph
-            A new instance of KnowledgeGraph with the specified triples duplicated.
-        """
-        # Créer des tensors additionnels pour les indices à dupliquer
-        duplicated_heads = torch.cat((self.head_idx, self.head_idx[indices_to_duplicate]))
-        duplicated_tails = torch.cat((self.tail_idx, self.tail_idx[indices_to_duplicate]))
-        duplicated_relations = torch.cat((self.relations, self.relations[indices_to_duplicate]))
+    #     Returns
+    #     -------
+    #     KnowledgeGraph
+    #         A new instance of KnowledgeGraph with the specified triples duplicated.
+    #     """
+    #     # Créer des tensors additionnels pour les indices à dupliquer
+    #     duplicated_heads = torch.cat((self.head_idx, self.head_idx[indices_to_duplicate]))
+    #     duplicated_tails = torch.cat((self.tail_idx, self.tail_idx[indices_to_duplicate]))
+    #     duplicated_relations = torch.cat((self.relations, self.relations[indices_to_duplicate]))
 
-        # Créer une nouvelle instance de KnowledgeGraph avec les triplets dupliqués
-        return KnowledgeGraph(
-            kg={'heads': duplicated_heads, 'tails': duplicated_tails, 'relations': duplicated_relations},
-            ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix
-        )
+    #     # Créer une nouvelle instance de KnowledgeGraph avec les triplets dupliqués
+    #     return KnowledgeGraph(
+    #         kg={'heads': duplicated_heads, 'tails': duplicated_tails, 'relations': duplicated_relations},
+    #         ent2ix=self.ent2ix,
+    #         rel2ix=self.rel2ix
+    #     )
     
-    def add_inverse_relations(self, undirected_relations):
-        """
-        Ajoute des triplets inverses pour les relations non dirigées spécifiées dans le graphe de connaissances.
+    # def add_inverse_relations(self, undirected_relations):
+    #     """
+    #     Ajoute des triplets inverses pour les relations non dirigées spécifiées dans le graphe de connaissances.
 
-        Parameters
-        ----------
-        undirected_relations: list
-            Liste des relations non dirigées pour lesquelles on veut ajouter les triplets inverses.
+    #     Parameters
+    #     ----------
+    #     undirected_relations: list
+    #         Liste des relations non dirigées pour lesquelles on veut ajouter les triplets inverses.
 
-        Returns
-        -------
-        KnowledgeGraph
-            Une nouvelle instance de KnowledgeGraph avec les triplets inverses ajoutés.
-        """
+    #     Returns
+    #     -------
+    #     KnowledgeGraph
+    #         Une nouvelle instance de KnowledgeGraph avec les triplets inverses ajoutés.
+    #     """
 
-        ix2rel = {v: k for k, v in self.rel2ix.items()}
+    #     ix2rel = {v: k for k, v in self.rel2ix.items()}
 
-        # Copier les indices existants pour les têtes, les queues et les relations
-        head_idx, tail_idx, relations = self.head_idx.clone(), self.tail_idx.clone(), self.relations.clone()
+    #     # Copier les indices existants pour les têtes, les queues et les relations
+    #     head_idx, tail_idx, relations = self.head_idx.clone(), self.tail_idx.clone(), self.relations.clone()
 
-        # Liste pour stocker les nouveaux triplets inverses
-        new_head_idx, new_tail_idx, new_relations = [], [], []
+    #     # Liste pour stocker les nouveaux triplets inverses
+    #     new_head_idx, new_tail_idx, new_relations = [], [], []
 
-        for relation_id in undirected_relations:
-            # Créez le nom de la relation inverse
-            inverse_relation = f"{ix2rel[relation_id]}_inv"
+    #     for relation_id in undirected_relations:
+    #         # Créez le nom de la relation inverse
+    #         inverse_relation = f"{ix2rel[relation_id]}_inv"
 
-            # Vérifiez si la relation existe dans le graphe
-            if relation_id not in self.rel2ix.values():
-                print(f"Relation {relation_id} non trouvée dans le graphe de connaissances. Skipping...")
-                continue
+    #         # Vérifiez si la relation existe dans le graphe
+    #         if relation_id not in self.rel2ix.values():
+    #             print(f"Relation {relation_id} non trouvée dans le graphe de connaissances. Skipping...")
+    #             continue
 
-            # Obtenir l'ID de la relation et créer un nouvel ID pour la relation inverse
-            inverse_relation_id = len(self.rel2ix)
-            self.rel2ix[inverse_relation] = inverse_relation_id
+    #         # Obtenir l'ID de la relation et créer un nouvel ID pour la relation inverse
+    #         inverse_relation_id = len(self.rel2ix)
+    #         self.rel2ix[inverse_relation] = inverse_relation_id
 
-            # Masque pour les triplets de la relation actuelle
-            mask = (relations == relation_id)
+    #         # Masque pour les triplets de la relation actuelle
+    #         mask = (relations == relation_id)
 
-            # Ajouter les triplets inverses pour les triplets existants de cette relation
-            new_head_idx.append(tail_idx[mask])
-            new_tail_idx.append(head_idx[mask])
-            new_relations.append(torch.full_like(relations[mask], inverse_relation_id))
+    #         # Ajouter les triplets inverses pour les triplets existants de cette relation
+    #         new_head_idx.append(tail_idx[mask])
+    #         new_tail_idx.append(head_idx[mask])
+    #         new_relations.append(torch.full_like(relations[mask], inverse_relation_id))
 
-        # Concaténer les nouveaux triplets inverses aux triplets existants
-        if new_head_idx:
+    #     # Concaténer les nouveaux triplets inverses aux triplets existants
+    #     if new_head_idx:
 
-            self.head_idx = torch.cat((self.head_idx, *new_head_idx), dim=0)
-            self.tail_idx = torch.cat((self.tail_idx, *new_tail_idx), dim=0)
-            self.relations = torch.cat((self.relations, *new_relations), dim=0)
+    #         self.head_idx = torch.cat((self.head_idx, *new_head_idx), dim=0)
+    #         self.tail_idx = torch.cat((self.tail_idx, *new_tail_idx), dim=0)
+    #         self.relations = torch.cat((self.relations, *new_relations), dim=0)
 
-        # Retourner une nouvelle instance de KnowledgeGraph avec les triplets inverses ajoutés
-        return KnowledgeGraph(
-            kg={'heads': self.head_idx, 'tails': self.tail_idx, 'relations': self.relations},
-            ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix
-        )
+    #     # Retourner une nouvelle instance de KnowledgeGraph avec les triplets inverses ajoutés
+    #     return KnowledgeGraph(
+    #         kg={'heads': self.head_idx, 'tails': self.tail_idx, 'relations': self.relations},
+    #         ent2ix=self.ent2ix,
+    #         rel2ix=self.rel2ix
+    #     )
     
     def add_triples(self, new_triples):
         """
@@ -615,15 +618,18 @@ class KnowledgeGraph(Dataset):
         updated_tail_idx = torch.cat((self.tail_idx, new_triples[:, 1]), dim=0)
         updated_relations = torch.cat((self.relations, new_triples[:, 2]), dim=0)
 
-        # # Mettre à jour dict_of_heads, dict_of_tails, dict_of_rels
-        # for h, t, r in new_triples.tolist():
-        #     self.dict_of_heads[(t, r)].add(h)
-        #     self.dict_of_tails[(h, r)].add(t)
-        #     self.dict_of_rels[(h, t)].add(r)
+        # Mettre à jour dict_of_heads, dict_of_tails, dict_of_rels
+        for h, t, r in new_triples.tolist():
+            self.dict_of_heads[(t, r)].add(h)
+            self.dict_of_tails[(h, r)].add(t)
+            self.dict_of_rels[(h, t)].add(r)
 
         # Créer une nouvelle instance de KnowledgeGraph avec les triplets mis à jour
         return KnowledgeGraph(
             kg={'heads': updated_head_idx, 'tails': updated_tail_idx, 'relations': updated_relations},
             ent2ix=self.ent2ix,
-            rel2ix=self.rel2ix
+            rel2ix=self.rel2ix,
+            dict_of_heads=self.dict_of_heads,
+            dict_of_tails=self.dict_of_tails,
+            dict_of_rels=self.dict_of_rels
         )
