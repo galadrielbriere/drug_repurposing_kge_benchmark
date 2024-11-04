@@ -278,21 +278,21 @@ def ensure_entity_coverage(kg_train, kg_val, kg_test):
 
             # Remove the triplets from source_kg
             kg_cleaned = source_kg.remove_triples(indices)
-            # if source_kg == kg_val:
-            #     kg_val = kg_cleaned
-            # else:
-            #     kg_test = kg_cleaned
+            if source_kg == kg_val:
+                kg_val = kg_cleaned
+            else:
+                kg_test = kg_cleaned
 
             # Update the list of missing entities
             entities_in_triplets = set(triplets[:, 0].tolist() + triplets[:, 1].tolist())
             remaining_entities = entities - set(entities_in_triplets)
-            return remaining_entities, kg_cleaned
-        return entities, kg_cleaned
+            return remaining_entities
+        return entities
 
     # Déplacer les triplets depuis kg_val puis depuis kg_test
-    missing_entities, kg_val = find_and_move_triplets(kg_val, missing_entities)
+    missing_entities = find_and_move_triplets(kg_val, missing_entities)
     if len(missing_entities) > 0:
-        missing_entities, kg_test = find_and_move_triplets(kg_test, missing_entities)
+        missing_entities = find_and_move_triplets(kg_test, missing_entities)
 
     # Loguer les entités restantes non trouvées
     if len(missing_entities) > 0:
