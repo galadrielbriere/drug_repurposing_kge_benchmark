@@ -1,0 +1,3 @@
+Epoch,Training Loss,Validation MRR,Learning Rate
+1,34186.38264284835,0,0.001
+2,27642.701846461423,0,0.001
