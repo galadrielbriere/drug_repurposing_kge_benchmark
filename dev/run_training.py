@@ -88,7 +88,9 @@ def main(args):
 
 def plot_learning_curves(training_metrics_file, config):
     df = read_training_metrics(training_metrics_file)
-
+    df['Training Loss'] = pd.to_numeric(df['Training Loss'], errors='coerce')
+    df['Validation MRR'] = pd.to_numeric(df['Validation MRR'], errors='coerce')
+    
     plt.figure(figsize=(12, 5))
 
     # Plot pour la perte d'entraînement
