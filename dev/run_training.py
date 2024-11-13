@@ -365,157 +365,138 @@ def link_pred(model, kg, batch_size):
     test_mrr = evaluator.mrr()[1]
     return test_mrr
 
-def calculate_mrrs_by_relation_groups(model, kg_test, list_rel_1, list_rel_2, eval_batch_size, output_file):
-    results = {
-        "List_1": {},
-        "List_2": {},
-        "Remaining_Relations": {},
-        "Global_MRR": None
-    }
 
-    total_relations = set(kg_test.rel2ix.keys())  
-    set_rel_1 = set(list_rel_1)
-    set_rel_2 = set(list_rel_2)
-    remaining_relations = total_relations - set_rel_1 - set_rel_2
+def calculate_mrr_for_relations(kg, model, eval_batch_size, relations):
+    # MRR calculé avec pondération par le nombre de faits
+    mrr_sum = 0.0
+    fact_count = 0
+    individual_mrrs = {}  # Dictionnaire pour stocker les MRR par relation
 
-    def calculate_mrr_for_relations(relations, group_name):
-        if not relations:
-            results[group_name]["No_Relations"] = True
-            return 0.0
+    for relation_name in relations:
+        # Récupérer l'indice et les faits associés
+        relation_index = kg.rel2ix.get(relation_name)
+        indices_to_keep = torch.nonzero(kg.relations == relation_index, as_tuple=False).squeeze()
 
-        mrr_sum = 0.0
-        count = 0
-        for relation_name in relations:
-            if relation_name not in kg_test.rel2ix:
-                results[group_name][relation_name] = {"Error": "Relation not found in KG"}
-                logging.info(f"Error: Relation '{relation_name}' not found in KG.")
-                continue
+        if indices_to_keep.numel() == 0:
+            continue  # Passer aux relations suivantes si aucun fait associé
             
-            try:
-                # Récupérer l'index de la relation via son nom
-                relation_index = kg_test.rel2ix[relation_name]
-                indices_to_keep = torch.nonzero(kg_test.relations == relation_index, as_tuple=False).squeeze()
-                new_kg = kg_test.keep_triples(indices_to_keep)
-                test_mrr = link_pred(model, new_kg, eval_batch_size)
-                mrr_sum += test_mrr
-                count += 1
-
-                results[group_name][relation_name] = {"MRR": round(test_mrr, 4)}
-                logging.info(f"MRR for relation '{relation_name}': {test_mrr:.4f}")
-
-            except Exception as e:
-                results[group_name][relation_name] = {"Error": str(e)}
-                logging.info(f"Error processing relation '{relation_name}': {str(e)}")
-
-        return mrr_sum / count if count > 0 else 0.0
-
-    logging.info("Calculating MRR for List 1...")
-    mrr_list_1 = calculate_mrr_for_relations(list_rel_1, "List_1")
-    results["List_1"]["MRR_Average"] = round(mrr_list_1, 10)
-
-    logging.info("Calculating MRR for List 2...")
-    mrr_list_2 = calculate_mrr_for_relations(list_rel_2, "List_2")
-    results["List_2"]["MRR_Average"] = round(mrr_list_2, 10)
+        print(relation_name)
+        
+        new_kg = kg.keep_triples(indices_to_keep)
+        new_kg.dict_of_rels = kg.dict_of_rels
+        new_kg.dict_of_heads = kg.dict_of_heads
+        new_kg.dict_of_tails = kg.dict_of_tails
+        test_mrr = link_pred(model, new_kg, eval_batch_size)
+        
+        # Enregistrer le MRR pour chaque relation
+        individual_mrrs[relation_name] = test_mrr
+        
+        # Accumuler le MRR global avec pondération
+        mrr_sum += test_mrr * indices_to_keep.numel()
+        fact_count += indices_to_keep.numel()
     
-    logging.info("Calculating MRR for Remaining Relations...")
-    mrr_remaining = calculate_mrr_for_relations(remaining_relations, "Remaining_Relations")
-    results["Remaining_Relations"]["MRR_Average"] = round(mrr_remaining, 10)
+    # Calcul du MRR global pour le groupe de relations
+    group_mrr = mrr_sum / fact_count if fact_count > 0 else 0
+    
+    # Retourner le MRR total, le nombre de faits, les MRR individuels par relation, et le MRR global pour le groupe
+    return mrr_sum, fact_count, individual_mrrs, group_mrr
 
-    # Calculer le MRR global
-    total_mrr = (mrr_list_1 * len(list_rel_1) + 
-                 mrr_list_2 * len(list_rel_2) + 
-                 mrr_remaining * len(remaining_relations)) / len(total_relations)
+def categorize_test_nodes(kg_train, kg_test, relation_name, threshold):
+    """
+    Categorizes test triples with the specified relation in the test set 
+    based on whether their entities have been seen with that relation in the training set,
+    and separates them into two groups based on a threshold for occurrences.
 
-    results["Global_MRR"] = round(total_mrr, 10)
+    Parameters
+    ----------
+    kg_train : KnowledgeGraph
+        The training knowledge graph.
+    kg_test : KnowledgeGraph
+        The test knowledge graph.
+    relation_name : str
+        The name of the relation to check (e.g., 'indication').
+    threshold : int
+        The minimum number of occurrences of the relation for a node to be considered as "frequent".
 
-    # Enregistrer les résultats dans un fichier YAML
-    with open(output_file, "w") as yaml_file:
-        yaml.dump(results, yaml_file, default_flow_style=False)
+    Returns
+    -------
+    frequent_indices : list
+        Indices of triples in the test set with the specified relation where entities have been seen more than `threshold` times with that relation in the training set.
+    infrequent_indices : list
+        Indices of triples in the test set with the specified relation where entities have been seen fewer than or equal to `threshold` times with that relation in the training set.
+    """
+    # Get the index of the specified relation in the training graph
+    if relation_name not in kg_train.rel2ix:
+        raise ValueError(f"The relation '{relation_name}' does not exist in the training knowledge graph.")
+    relation_idx = kg_train.rel2ix[relation_name]
 
-    logging.info(f"Results saved to {output_file}")
+    # Count occurrences of nodes with the specified relation in the training set
+    train_node_counts = {}
+    for i in range(kg_train.n_facts):
+        if kg_train.relations[i].item() == relation_idx:
+            head = kg_train.head_idx[i].item()
+            tail = kg_train.tail_idx[i].item()
+            train_node_counts[head] = train_node_counts.get(head, 0) + 1
+            train_node_counts[tail] = train_node_counts.get(tail, 0) + 1
 
-    return total_mrr
+    # Separate test triples with the specified relation based on the threshold
+    frequent_indices = []
+    infrequent_indices = []
+    for i in range(kg_test.n_facts):
+        if kg_test.relations[i].item() == relation_idx:  # Only consider triples with the specified relation
+            head = kg_test.head_idx[i].item()
+            tail = kg_test.tail_idx[i].item()
+            head_count = train_node_counts.get(head, 0)
+            tail_count = train_node_counts.get(tail, 0)
 
-# def compute_degrees(graph, nodes):
-#     degrees = []
-#     for node in nodes:
-#         if graph.has_node(node):
-#             degrees.append(graph.degree(node))
-#         else:
-#             degrees.append(0) 
-#     return degrees
+            # Categorize based on threshold
+            if head_count > threshold or tail_count > threshold:
+                frequent_indices.append(i)
+            else:
+                infrequent_indices.append(i)
 
+    return frequent_indices, infrequent_indices
 
-# def calculate_mrr_by_degree(model, kg_train, kg_test, relation_interest, threshold, eval_batch_size, out_file):
-#     results = {
-#         "Head_Degree_Greater": {"MRR": None, "Count": 0},
-#         "Head_Degree_Less": {"MRR": None, "Count": 0},
-#         "Tail_Degree_Greater": {"MRR": None, "Count": 0},
-#         "Tail_Degree_Less": {"MRR": None, "Count": 0}
-#     }
+def calculate_mrr_for_categories(kg_test, model, eval_batch_size, frequent_indices, infrequent_indices):
+    """
+    Calculate the MRR for frequent and infrequent categories based on given indices.
+    
+    Parameters
+    ----------
+    kg_test : KnowledgeGraph
+        The test knowledge graph.
+    model : Model
+        The model used for link prediction.
+    eval_batch_size : int
+        The evaluation batch size.
+    frequent_indices : list
+        Indices of test triples considered as frequent.
+    infrequent_indices : list
+        Indices of test triples considered as infrequent.
 
-#     # Construire le graphe `G` pour kg_train
-#     kg_train_df = kg_train.get_df()
-#     G = nx.DiGraph()
-#     for _, row in kg_train_df[kg_train_df['rel'] == relation_interest].iterrows():
-#         G.add_edge(row['from'], row['to'])
+    Returns
+    -------
+    frequent_mrr : float
+        MRR for the frequent category.
+    infrequent_mrr : float
+        MRR for the infrequent category.
+    """
 
-#     # Calculer les degrés dans kg_train pour les nœuds head et tail de la relation d'intérêt
-#     head_degrees = compute_degrees(G, kg_test.get_df()['from'])
-#     tail_degrees = compute_degrees(G, kg_test.get_df()['to'])
+    # Créer des sous-graphes pour les catégories fréquentes et infrequentes
+    kg_frequent = kg_test.keep_triples(frequent_indices)
+    kg_frequent.dict_of_rels = kg_test.dict_of_rels
+    kg_frequent.dict_of_heads = kg_test.dict_of_heads
+    kg_frequent.dict_of_tails = kg_test.dict_of_tails
+    kg_infrequent = kg_test.keep_triples(infrequent_indices)
+    kg_infrequent.dict_of_rels = kg_test.dict_of_rels
+    kg_infrequent.dict_of_heads = kg_test.dict_of_heads
+    kg_infrequent.dict_of_tails = kg_test.dict_of_tails
+    
+    # Calculer le MRR pour chaque catégorie
+    frequent_mrr = link_pred(model, kg_frequent, eval_batch_size) if frequent_indices else 0
+    infrequent_mrr = link_pred(model, kg_infrequent, eval_batch_size) if infrequent_indices else 0
 
-#     # Séparer les triplets de kg_test en fonction des seuils de degré pour head et tail
-#     kg_test_df = kg_test.get_df()
-#     test_triplets = kg_test_df[kg_test_df['rel'] == relation_interest]
-
-#     # Initialiser les listes pour chaque cas
-#     head_greater, head_less, tail_greater, tail_less = [], [], [], []
-
-#     # Séparer les triplets en fonction des degrés
-#     for i, (head, tail) in enumerate(zip(test_triplets['from'], test_triplets['to'])):
-#         if head_degrees[i] > threshold:
-#             head_greater.append((head, tail))
-#         else:
-#             head_less.append((head, tail))
-
-#         if tail_degrees[i] > threshold:
-#             tail_greater.append((head, tail))
-#         else:
-#             tail_less.append((head, tail))
-
-#     # Enregistrer le nombre de triplets dans chaque groupe
-#     results["Head_Degree_Greater"]["Count"] = len(head_greater)
-#     results["Head_Degree_Less"]["Count"] = len(head_less)
-#     results["Tail_Degree_Greater"]["Count"] = len(tail_greater)
-#     results["Tail_Degree_Less"]["Count"] = len(tail_less)
-
-#     # Calculer les MRR pour chaque cas
-#     def calculate_mrr(triplets):
-#         if not triplets:
-#             return 0.0
-#         # Créer un sous-KG pour les triplets spécifiés
-#         indices_to_keep = torch.tensor([i for i, (h, t) in enumerate(zip(kg_test.relations, kg_test.head_idx, kg_test.tail_idx))
-#                                         if (h, t) in triplets], dtype=torch.long)
-#         new_kg = kg_test.keep_triples(indices_to_keep)
-#         return link_pred(model, new_kg, eval_batch_size)
-
-#     # Calculer les MRR pour chaque groupe
-#     results["Head_Degree_Greater"]["MRR"] = round(calculate_mrr(head_greater), 10)
-#     results["Head_Degree_Less"]["MRR"] = round(calculate_mrr(head_less), 10)
-#     results["Tail_Degree_Greater"]["MRR"] = round(calculate_mrr(tail_greater), 10)
-#     results["Tail_Degree_Less"]["MRR"] = round(calculate_mrr(tail_less), 10)
-
-#     # Log des résultats
-#     for group, result in results.items():
-#         logging.info(f"{group} - MRR: {result['MRR']:.4f}, Count: {result['Count']}")
-
-#     # Sauvegarder les résultats dans un fichier YAML
-#     with open(out_file, "w") as yaml_file:
-#         yaml.dump(results, yaml_file, default_flow_style=False)
-
-#     logging.info(f"Results saved to {out_file}")
-
-#     return results
+    return frequent_mrr, infrequent_mrr
 
 def read_training_metrics(training_metrics_file):
     df = pd.read_csv(training_metrics_file)
@@ -824,18 +805,6 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Evaluation on test set
     #################
 
-    # # TEST SUR LE DERNIER MODELE
-    # logging.info("Evaluating on the test set with last model...")
-    # test_mrr = link_pred(model, kg_test, eval_batch_size)
-    # logging.info(f"Final Test MRR with last model: {test_mrr}")
-
-    # def print_gpu_memory(message=""):
-    #     allocated = torch.cuda.memory_allocated() / 1024**3
-    #     reserved = torch.cuda.memory_reserved() / 1024**3
-    #     print(f"{message} - Memory Allocated: {allocated:.2f} GB, Memory Reserved: {reserved:.2f} GB")
-
-    # print_gpu_memory("Before clearing variables")
-
     if run_eval:
         model.to("cpu")
         del model
@@ -848,18 +817,67 @@ def train_model(kg_train, kg_val, kg_test, config):
         logging.info("Loading best model.")
         best_model = find_best_model(checkpoint_dir)
         logging.info(f"Best model is {os.path.join(checkpoint_dir, best_model)}")
-        checkpoint = torch.load(os.path.join(checkpoint_dir, best_model))
+        checkpoint = torch.load(os.path.join(checkpoint_dir, best_model), map_location=device)
         new_model.load_state_dict(checkpoint["model"])
         logging.info("Best model successfully loaded.")
         logging.info("Evaluating on the test set with best model...")
 
         list_rel_1 = config.get('evaluation', {}).get('made_directed_relations', [])
         list_rel_2 = config.get('evaluation', {}).get('target_relations', [])
+        thresholds = config.get('evaluation', {}).get('thresholds', [])
         mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.yaml')
 
-        test_mrr = calculate_mrrs_by_relation_groups(new_model, kg_test, list_rel_1, list_rel_2, eval_batch_size, mrr_file)
+        all_relations = set(kg_test.rel2ix.keys())
+        remaining_relations = all_relations - set(list_rel_1) - set(list_rel_2)
+        remaining_relations = list(remaining_relations)
 
-        logging.info(f"Final Test MRR with best model: {test_mrr}")
+        total_mrr_sum_list_1, fact_count_list_1, individual_mrrs_list_1, group_mrr_list_1 = calculate_mrr_for_relations(
+            kg_test, new_model, eval_batch_size, list_rel_1)
+        total_mrr_sum_list_2, fact_count_list_2, individual_mrrs_list_2, group_mrr_list_2 = calculate_mrr_for_relations(
+            kg_test, new_model, eval_batch_size, list_rel_2)
+        total_mrr_sum_remaining, fact_count_remaining, individual_mrrs_remaining, group_mrr_remaining = calculate_mrr_for_relations(
+            kg_test, new_model, eval_batch_size, remaining_relations)
+
+        global_mrr = (total_mrr_sum_list_1 + total_mrr_sum_list_2 + total_mrr_sum_remaining) / (fact_count_list_1 + fact_count_list_2 + fact_count_remaining)
+
+        logging.info(f"Final Test MRR with best model: {global_mrr}")
+
+        results = {
+            "Global_MRR": global_mrr,
+            "made_directed_relations": {
+                "Global_MRR": group_mrr_list_1,
+                "Individual_MRRs": individual_mrrs_list_1
+            },
+            "target_relations": {
+                "Global_MRR": group_mrr_list_2,
+                "Individual_MRRs": individual_mrrs_list_2
+            },
+            "remaining_relations": {
+                "Global_MRR": group_mrr_remaining,
+                "Individual_MRRs": individual_mrrs_remaining
+            }
+        }
+
+
+        for i in range(len(list_rel_2)):
+            relation = list_rel_2[i]
+            threshold = thresholds[i]
+            frequent_indices, infrequent_indices = categorize_test_nodes(kg_train, kg_test, relation, threshold)
+            frequent_mrr, infrequent_mrr = calculate_mrr_for_categories(kg_test, new_model, eval_batch_size, frequent_indices, infrequent_indices)
+            logging.info(f"MRR for frequent nodes (threshold={threshold}) in relation {relation}: {frequent_mrr}")
+            logging.info(f"MRR for infrequent nodes (threshold={threshold}) in relation {relation}: {infrequent_mrr}")
+
+            results["target_relations_by_frequency"][relation] = {
+                "Frequent_MRR": frequent_mrr,
+                "Infrequent_MRR": infrequent_mrr,
+                "Threshold": threshold
+            }
+            
+        
+        with open(mrr_file, "w") as file:
+            yaml.dump(results, file, default_flow_style=False, sort_keys=False)
+
+        logging.info(f"Evaluation results stored in {mrr_file}")
 
     # run_eval_by_degree = config.get('evaluation_by_degree', {})
     # if run_eval and run_eval_by_degree:
