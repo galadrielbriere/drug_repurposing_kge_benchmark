@@ -855,7 +855,8 @@ def train_model(kg_train, kg_val, kg_test, config):
             "remaining_relations": {
                 "Global_MRR": group_mrr_remaining,
                 "Individual_MRRs": individual_mrrs_remaining
-            }
+            },
+            "target_relations_by_frequency": {}  
         }
 
 
