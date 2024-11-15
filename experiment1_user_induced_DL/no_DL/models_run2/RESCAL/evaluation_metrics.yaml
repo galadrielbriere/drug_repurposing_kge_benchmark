@@ -1,0 +1,48 @@
+Global_MRR: 0.2505715854509379
+made_directed_relations:
+  Global_MRR: 0.30227404271149433
+  Individual_MRRs:
+    drug_drug: 0.3746156692504883
+    disease_disease: 0.07192368060350418
+    protein_protein: 0.03800365328788757
+    drug_drug_inv: 0.3671590983867645
+    disease_disease_inv: 0.07246885448694229
+    protein_protein_inv: 0.03997623547911644
+target_relations:
+  Global_MRR: 0.20000705122947693
+  Individual_MRRs:
+    indication: 0.20000705122947693
+remaining_relations:
+  Global_MRR: 0.17794006326162096
+  Individual_MRRs:
+    exposure_bioprocess: 0.10821032524108887
+    exposure_exposure: 0.1854770928621292
+    protein_cellcomp: 0.11471399664878845
+    drug_protein: 0.12665358185768127
+    exposure_cellcomp: 0.002665873384103179
+    drug_effect: 0.0793374627828598
+    phenotype_phenotype: 0.04419860988855362
+    molfunc_molfunc: 0.09442484378814697
+    protein_molfunc: 0.09237421303987503
+    protein_absent_anatomy: 0.12941329181194305
+    bioprocess_bioprocess: 0.06219057738780975
+    anatomy_anatomy: 0.004279532935470343
+    pathway_pathway: 0.07169432193040848
+    protein_pathway: 0.20730586349964142
+    protein_present_anatomy: 0.22595542669296265
+    exposure_molfunc: 0.19463227689266205
+    disease_protein: 0.1974872499704361
+    phenotype_protein: 0.158420592546463
+    disease_phenotype_negative: 0.055929671972990036
+    exposure_disease: 0.14148841798305511
+    off-label use: 0.2324219048023224
+    exposure_protein: 0.1105150580406189
+    contraindication: 0.15768471360206604
+    disease_phenotype_positive: 0.04100234434008598
+    cellcomp_cellcomp: 0.049146633595228195
+    protein_bioprocess: 0.06701472401618958
+target_relations_by_frequency:
+  indication:
+    Frequent_MRR: 0.2350899875164032
+    Infrequent_MRR: 0.11851517856121063
+    Threshold: 10
