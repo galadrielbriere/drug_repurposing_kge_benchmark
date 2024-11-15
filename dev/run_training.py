@@ -764,7 +764,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     #################
     # Checkpoint restart 
     #################
-    if resume_checkpoint:
+    if run_training and resume_checkpoint:
         if os.path.isfile(resume_checkpoint):
             logging.info(f"Resuming from checkpoint: {resume_checkpoint}")
             checkpoint = torch.load(resume_checkpoint)
