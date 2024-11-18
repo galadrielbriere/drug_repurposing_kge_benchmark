@@ -809,7 +809,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Evaluation on test set
     #################
 
-    if run_eval | run_inference:
+    if run_eval or run_inference:
         model.to("cpu")
         del model
         model = None
