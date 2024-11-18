@@ -43,6 +43,8 @@ from kg_processing import (
     prepare_knowledge_graph,
     load_knowledge_graph,
 )
+
+from my_knowledge_graph import KnowledgeGraph
 from mixed_sampler import MixedNegativeSampler
 from positional_sampler import PositionalNegativeSampler
 
@@ -71,6 +73,7 @@ def main(args):
     run_training =  config['common'].get('run_evaluation', True)
     run_plot =  config['common'].get('plot_training_metrics', True)
     run_eval =  config['common'].get('run_evaluation', True)
+    run_inference = config['common'].get('run_inference', True)
 
     if run_kg_prep:
             logging.info(f"Preparing KG...")
@@ -515,6 +518,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     run_training = config['common'].get('run_training', True)
     plot_training_metrics = config['common'].get('plot_training_metrics', True)
     run_eval = config['common'].get('run_evaluation', True)
+    run_inference = config['common'].get('run_inference', True)
 
     #################
     # Initialization
@@ -805,7 +809,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     # Evaluation on test set
     #################
 
-    if run_eval:
+    if run_eval | run_inference:
         model.to("cpu")
         del model
         model = None
@@ -822,63 +826,92 @@ def train_model(kg_train, kg_val, kg_test, config):
         logging.info("Best model successfully loaded.")
         logging.info("Evaluating on the test set with best model...")
 
-        list_rel_1 = config.get('evaluation', {}).get('made_directed_relations', [])
-        list_rel_2 = config.get('evaluation', {}).get('target_relations', [])
-        thresholds = config.get('evaluation', {}).get('thresholds', [])
-        mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.yaml')
+        if run_eval:
+            list_rel_1 = config.get('evaluation', {}).get('made_directed_relations', [])
+            list_rel_2 = config.get('evaluation', {}).get('target_relations', [])
+            thresholds = config.get('evaluation', {}).get('thresholds', [])
+            mrr_file = os.path.join(config['common']['out'], 'evaluation_metrics.yaml')
 
-        all_relations = set(kg_test.rel2ix.keys())
-        remaining_relations = all_relations - set(list_rel_1) - set(list_rel_2)
-        remaining_relations = list(remaining_relations)
+            all_relations = set(kg_test.rel2ix.keys())
+            remaining_relations = all_relations - set(list_rel_1) - set(list_rel_2)
+            remaining_relations = list(remaining_relations)
 
-        total_mrr_sum_list_1, fact_count_list_1, individual_mrrs_list_1, group_mrr_list_1 = calculate_mrr_for_relations(
-            kg_test, new_model, eval_batch_size, list_rel_1)
-        total_mrr_sum_list_2, fact_count_list_2, individual_mrrs_list_2, group_mrr_list_2 = calculate_mrr_for_relations(
-            kg_test, new_model, eval_batch_size, list_rel_2)
-        total_mrr_sum_remaining, fact_count_remaining, individual_mrrs_remaining, group_mrr_remaining = calculate_mrr_for_relations(
-            kg_test, new_model, eval_batch_size, remaining_relations)
+            total_mrr_sum_list_1, fact_count_list_1, individual_mrrs_list_1, group_mrr_list_1 = calculate_mrr_for_relations(
+                kg_test, new_model, eval_batch_size, list_rel_1)
+            total_mrr_sum_list_2, fact_count_list_2, individual_mrrs_list_2, group_mrr_list_2 = calculate_mrr_for_relations(
+                kg_test, new_model, eval_batch_size, list_rel_2)
+            total_mrr_sum_remaining, fact_count_remaining, individual_mrrs_remaining, group_mrr_remaining = calculate_mrr_for_relations(
+                kg_test, new_model, eval_batch_size, remaining_relations)
 
-        global_mrr = (total_mrr_sum_list_1 + total_mrr_sum_list_2 + total_mrr_sum_remaining) / (fact_count_list_1 + fact_count_list_2 + fact_count_remaining)
+            global_mrr = (total_mrr_sum_list_1 + total_mrr_sum_list_2 + total_mrr_sum_remaining) / (fact_count_list_1 + fact_count_list_2 + fact_count_remaining)
 
-        logging.info(f"Final Test MRR with best model: {global_mrr}")
+            logging.info(f"Final Test MRR with best model: {global_mrr}")
 
-        results = {
-            "Global_MRR": global_mrr,
-            "made_directed_relations": {
-                "Global_MRR": group_mrr_list_1,
-                "Individual_MRRs": individual_mrrs_list_1
-            },
-            "target_relations": {
-                "Global_MRR": group_mrr_list_2,
-                "Individual_MRRs": individual_mrrs_list_2
-            },
-            "remaining_relations": {
-                "Global_MRR": group_mrr_remaining,
-                "Individual_MRRs": individual_mrrs_remaining
-            },
-            "target_relations_by_frequency": {}  
-        }
-
-
-        for i in range(len(list_rel_2)):
-            relation = list_rel_2[i]
-            threshold = thresholds[i]
-            frequent_indices, infrequent_indices = categorize_test_nodes(kg_train, kg_test, relation, threshold)
-            frequent_mrr, infrequent_mrr = calculate_mrr_for_categories(kg_test, new_model, eval_batch_size, frequent_indices, infrequent_indices)
-            logging.info(f"MRR for frequent nodes (threshold={threshold}) in relation {relation}: {frequent_mrr}")
-            logging.info(f"MRR for infrequent nodes (threshold={threshold}) in relation {relation}: {infrequent_mrr}")
-
-            results["target_relations_by_frequency"][relation] = {
-                "Frequent_MRR": frequent_mrr,
-                "Infrequent_MRR": infrequent_mrr,
-                "Threshold": threshold
+            results = {
+                "Global_MRR": global_mrr,
+                "made_directed_relations": {
+                    "Global_MRR": group_mrr_list_1,
+                    "Individual_MRRs": individual_mrrs_list_1
+                },
+                "target_relations": {
+                    "Global_MRR": group_mrr_list_2,
+                    "Individual_MRRs": individual_mrrs_list_2
+                },
+                "remaining_relations": {
+                    "Global_MRR": group_mrr_remaining,
+                    "Individual_MRRs": individual_mrrs_remaining
+                },
+                "target_relations_by_frequency": {}  
             }
-            
-        
-        with open(mrr_file, "w") as file:
-            yaml.dump(results, file, default_flow_style=False, sort_keys=False)
 
-        logging.info(f"Evaluation results stored in {mrr_file}")
+
+            for i in range(len(list_rel_2)):
+                relation = list_rel_2[i]
+                threshold = thresholds[i]
+                frequent_indices, infrequent_indices = categorize_test_nodes(kg_train, kg_test, relation, threshold)
+                frequent_mrr, infrequent_mrr = calculate_mrr_for_categories(kg_test, new_model, eval_batch_size, frequent_indices, infrequent_indices)
+                logging.info(f"MRR for frequent nodes (threshold={threshold}) in relation {relation}: {frequent_mrr}")
+                logging.info(f"MRR for infrequent nodes (threshold={threshold}) in relation {relation}: {infrequent_mrr}")
+
+                results["target_relations_by_frequency"][relation] = {
+                    "Frequent_MRR": frequent_mrr,
+                    "Infrequent_MRR": infrequent_mrr,
+                    "Threshold": threshold
+                }
+                
+            
+            with open(mrr_file, "w") as file:
+                yaml.dump(results, file, default_flow_style=False, sort_keys=False)
+
+            logging.info(f"Evaluation results stored in {mrr_file}")
+        
+        if run_inference:
+            inference_mrr_file = os.path.join(config['common']['out'], 'inference_metrics.yaml')
+
+            orpha_df= pd.read_csv(run_inference, sep="\t")
+            orpha_kg = KnowledgeGraph(df = orpha_df, ent2ix=kg_train.ent2ix, rel2ix=kg_train.rel2ix) 
+            
+            evaluator = LinkPredictionEvaluator(new_model, orpha_kg)
+            evaluator.evaluate(b_size=eval_batch_size, verbose=True)
+                
+            inference_mrr = evaluator.mrr()[1]
+            inference_hit10 = evaluator.hit_at_k(10)[1]
+
+            results = {"Inference MRR": inference_mrr, "Inference hit@10:": inference_hit10}
+
+            logging.info(f"MRR on inference set: {inference_mrr}")
+
+            with open(inference_mrr_file, "w") as file:
+                yaml.dump(results, file, default_flow_style=False, sort_keys=False)
+
+
+            logging.info(f"Evaluation results stored in {inference_mrr_file}")
+
+
+            
+
+
+        
 
     # run_eval_by_degree = config.get('evaluation_by_degree', {})
     # if run_eval and run_eval_by_degree:
