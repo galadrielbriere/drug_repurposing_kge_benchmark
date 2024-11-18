@@ -85,7 +85,7 @@ def main(args):
 
     # kg_train, kg_val, kg_test = load_fb15k()
 
-    if run_training or run_plot or run_eval:
+    if run_training or run_plot or run_eval or run_inference:
         train_model(kg_train, kg_val, kg_test, config)
 
 
