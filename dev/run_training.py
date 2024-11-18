@@ -826,6 +826,8 @@ def train_model(kg_train, kg_val, kg_test, config):
         logging.info("Best model successfully loaded.")
         logging.info("Evaluating on the test set with best model...")
 
+        new_model.eval()
+
         if run_eval:
             list_rel_1 = config.get('evaluation', {}).get('made_directed_relations', [])
             list_rel_2 = config.get('evaluation', {}).get('target_relations', [])
