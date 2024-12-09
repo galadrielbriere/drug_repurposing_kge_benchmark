@@ -376,7 +376,7 @@ class KnowledgeGraph(Dataset):
                 return 1, 0, 0
             else:
                 return 1, 0
-        if count == 2:
+        elif count == 2:
             if validation:
                 return 1, 1, 0
             else:

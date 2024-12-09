@@ -143,70 +143,71 @@ def initialize_model(config, kg_train, device):
         warnings.warn("The model margin field is missing in the configuration. Defaulting to 1.0.")
 
     # Translational models
-    if model_name == 'TransE':
-        model = torchkge.models.TransEModel(emb_dim, kg_train.n_ent, kg_train.n_rel,
-                                            dissimilarity_type=dissimilarity)
-        criterion = MarginLoss(margin)
+    match model_name:
+        case 'TransE':
+            model = torchkge.models.TransEModel(emb_dim, kg_train.n_ent, kg_train.n_rel,
+                                                dissimilarity_type=dissimilarity)
+            criterion = MarginLoss(margin)
 
-    elif model_name == 'TransH':
-        model = torchkge.models.TransHModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = MarginLoss(margin)
+        case 'TransH':
+            model = torchkge.models.TransHModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = MarginLoss(margin)
 
-    elif model_name == 'TransR':
-        model = torchkge.models.TransRModel(emb_dim, rel_emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = MarginLoss(margin)
+        case 'TransR':
+            model = torchkge.models.TransRModel(emb_dim, rel_emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = MarginLoss(margin)
 
-    elif model_name == 'TransD':
-        model = torchkge.models.TransDModel(emb_dim, rel_emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = MarginLoss(margin)
+        case 'TransD':
+            model = torchkge.models.TransDModel(emb_dim, rel_emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = MarginLoss(margin)
 
-    elif model_name == 'TorusE':
-        model = torchkge.models.TorusEModel(emb_dim, kg_train.n_ent, kg_train.n_rel,
-                                            dissimilarity_type=dissimilarity)
-        criterion = MarginLoss(margin)
+        case 'TorusE':
+            model = torchkge.models.TorusEModel(emb_dim, kg_train.n_ent, kg_train.n_rel,
+                                                dissimilarity_type=dissimilarity)
+            criterion = MarginLoss(margin)
 
-    # Bilinear models
-    elif model_name == 'DistMult':
-        model = torchkge.models.DistMultModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = BinaryCrossEntropyLoss()
+        # Bilinear models
+        case 'DistMult':
+            model = torchkge.models.DistMultModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = BinaryCrossEntropyLoss()
 
-    elif model_name == 'HolE':
-        model = torchkge.models.HolEModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = BinaryCrossEntropyLoss()
+        case 'HolE':
+            model = torchkge.models.HolEModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = BinaryCrossEntropyLoss()
 
-    elif model_name == 'ComplEx':
-        model = torchkge.models.ComplExModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = BinaryCrossEntropyLoss()
+        case 'ComplEx':
+            model = torchkge.models.ComplExModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = BinaryCrossEntropyLoss()
 
-    elif model_name == 'RESCAL':
-        model = torchkge.models.RESCALModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
-        criterion = BinaryCrossEntropyLoss()
+        case 'RESCAL':
+            model = torchkge.models.RESCALModel(emb_dim, kg_train.n_ent, kg_train.n_rel)
+            criterion = BinaryCrossEntropyLoss()
 
-    elif model_name == "ANALOGY":
-        scalar_share = config['model'].get('scalar_share', 0.5)
-        if 'scalar_share' not in config['model']:
-            warnings.warn(f"The 'scalar_share' field is missing for model {model_name}. Defaulting to 0.5.")
-        model = torchkge.models.AnalogyModel(emb_dim, kg_train.n_ent, kg_train.n_rel, scalar_share)
-        criterion = BinaryCrossEntropyLoss()
-    
-    elif model_name == 'ConvKB':
-        n_filters = config['model'].get('n_filters', 32)
-        if 'n_filters' not in config['model']:
-            warnings.warn("The 'n_filters' field is missing in the configuration. Defaulting to 32.")
+        case "ANALOGY":
+            scalar_share = config['model'].get('scalar_share', 0.5)
+            if 'scalar_share' not in config['model']:
+                warnings.warn(f"The 'scalar_share' field is missing for model {model_name}. Defaulting to 0.5.")
+            model = torchkge.models.AnalogyModel(emb_dim, kg_train.n_ent, kg_train.n_rel, scalar_share)
+            criterion = BinaryCrossEntropyLoss()
+        
+        case 'ConvKB':
+            n_filters = config['model'].get('n_filters', 32)
+            if 'n_filters' not in config['model']:
+                warnings.warn("The 'n_filters' field is missing in the configuration. Defaulting to 32.")
 
-        model = torchkge.models.ConvKBModel(emb_dim, n_filters, kg_train.n_ent, kg_train.n_rel)
-        criterion = BinaryCrossEntropyLoss()
+            model = torchkge.models.ConvKBModel(emb_dim, n_filters, kg_train.n_ent, kg_train.n_rel)
+            criterion = BinaryCrossEntropyLoss()
 
-    elif model_name == "TransEModelWithGCN":
-        model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
-        criterion = MarginLoss(margin)
+        case "TransEModelWithGCN":
+            model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
+            criterion = MarginLoss(margin)
 
-    elif model_name == "DistMultModelWithGCN":
-        model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
-        criterion = BinaryCrossEntropyLoss()
+        case "DistMultModelWithGCN":
+            model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, num_gcn_layers=1)
+            criterion = BinaryCrossEntropyLoss()
 
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
+        case _:
+            raise ValueError(f"Unknown model: {model_name}")
 
     model.to(device)
 
@@ -223,21 +224,21 @@ def initialize_sampler(config, kg_train, kg_val, kg_test):
     if 'n_neg' not in config['sampler'] and sampler_name in ['Uniform', 'Bernouilli', 'Mixed']:
         warnings.warn("The sampler n_neg field is missing in the configuration. Defaulting to 1.")
 
-
-    if sampler_name == 'Positional':
-        sampler = PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
-    
-    elif sampler_name == 'Uniform':
-        sampler = torchkge.sampling.UniformNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
-    
-    elif sampler_name == 'Bernoulli':
-        sampler = torchkge.sampling.BernoulliNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
-    
-    elif sampler_name == "Mixed":
-        sampler = MixedNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
-    
-    else:
-        raise ValueError(f"Sampler type '{sampler_name}' is not supported. Please check the configuration.")
+    match sampler_name:
+        case 'Positional':
+            sampler = PositionalNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test)
+        
+        case 'Uniform':
+            sampler = torchkge.sampling.UniformNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
+        
+        case 'Bernoulli':
+            sampler = torchkge.sampling.BernoulliNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
+        
+        case "Mixed":
+            sampler = MixedNegativeSampler(kg_train, kg_val=kg_val, kg_test=kg_test, n_neg=n_neg)
+        
+        case _:
+            raise ValueError(f"Sampler type '{sampler_name}' is not supported. Please check the configuration.")
     
     return sampler
 

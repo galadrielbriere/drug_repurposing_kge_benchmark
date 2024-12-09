@@ -383,7 +383,7 @@ def remove_duplicates_triplets(kg):
         pairs = torch.cat([pairs, original_indices.unsqueeze(1)], dim=1)
 
         # Create a dictionary entry for the relation with pairs
-        T[r_] = pairs
+        T[r_] = pairs # QUESTION why ? This is not reused anywhere else, and not returned.
 
         # Identify unique triples and their original indices
         unique, idx, counts = torch.unique(pairs[:, :2], dim=0, sorted=True, return_inverse=True, return_counts=True)
