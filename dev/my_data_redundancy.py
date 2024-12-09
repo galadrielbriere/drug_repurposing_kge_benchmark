@@ -506,7 +506,7 @@ def duplicates(kg, theta1=0.8, theta2=0.8, counts=False, reverses=None):
     rev_duplicates: list
         List of pairs giving reverse duplicate relations.
     """
-    
+    # QUESTION : counts not used?
     if reverses is None:
         reverses = []
 
