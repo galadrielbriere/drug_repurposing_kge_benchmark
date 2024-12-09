@@ -470,7 +470,7 @@ def count_triplets(kg1, kg2, duplicates, rev_duplicates):
 
     return n_duplicates, n_rev_duplicates
 
-def duplicates(kg, theta1=0.8, theta2=0.8, counts=False, reverses=None):
+def duplicates(kg, theta1=0.8, theta2=0.8, counts=False, reverses=[]):
     """Return the duplicate and reverse duplicate relations as explained
     in paper by Akrami et al.
 
@@ -507,8 +507,6 @@ def duplicates(kg, theta1=0.8, theta2=0.8, counts=False, reverses=None):
         List of pairs giving reverse duplicate relations.
     """
     # QUESTION : counts not used?
-    if reverses is None:
-        reverses = []
 
     T = dict()
     T_inv = dict()
