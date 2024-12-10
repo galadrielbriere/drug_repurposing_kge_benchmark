@@ -341,7 +341,7 @@ def initialize_lr_scheduler(optimizer, config):
     
     # Initialize the scheduler based on its type
     try:
-            scheduler = scheduler_class(optimizer, **scheduler_params)
+        scheduler = scheduler_class(optimizer, **scheduler_params)  
     except TypeError as e:
         raise ValueError(f"Error initializing '{scheduler_type}': {e}")
 

@@ -635,3 +635,4 @@ class KnowledgeGraph(Dataset):
             dict_of_tails=self.dict_of_tails,
             dict_of_rels=self.dict_of_rels
         )
+        # QUESTION : pourquoi ne pas juste faire la modification inplace et garder le même objet ?
