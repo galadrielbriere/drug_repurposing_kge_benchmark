@@ -1,6 +1,9 @@
 common:
   seed: 42
+  # KG CSV with at least columns named from, to and rel
   input_csv: "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
+  # CSV containing the mapping of entities to their metadata, with at least columns id (must be the same as the KG id) and type
+  mapping_csv: "/path/to/somewhere"
   # input_pkl: 
   out: "./"
   verbose: true

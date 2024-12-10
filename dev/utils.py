@@ -18,7 +18,7 @@ def extract_node_type(node_name):
     """Extracts the node type from the node name, based on the string before the first underscore."""
     return node_name.split('_')[0]
 
-def create_hetero_data(kg):
+def create_hetero_data(kg, mapping):
     df = kg.get_df()
     
     data = HeteroData()
@@ -35,9 +35,13 @@ def create_hetero_data(kg):
 
     kg_to_node_type = {}  # Mapping pour chaque ID du KG vers son type de nœud
 
+    type_mapping = mapping[["type","id"]] # Keep only type and id column
+
     # 1. Parser les types de nœuds et les identifiants
-    df['from_type'] = df['from'].apply(extract_node_type)
-    df['to_type'] = df['to'].apply(extract_node_type)
+    df = pd.merge(df, type_mapping, how="left", left_on="from", right_on="id", suffixes=(None, "_from"))
+    df = pd.merge(df, type_mapping, how="left", left_on="to", right_on="id", suffixes=(None, "_to"))
+    # TODO : make sure we get the column type_from and type_to
+
 
     # 2. Identifier tous les types de nœuds uniques
     node_types = pd.unique(df[['from_type', 'to_type']].values.ravel('K'))
