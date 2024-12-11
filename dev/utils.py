@@ -38,10 +38,9 @@ def create_hetero_data(kg, mapping):
     type_mapping = mapping[["type","id"]] # Keep only type and id column
 
     # 1. Parser les types de nœuds et les identifiants
-    df = pd.merge(df, type_mapping, how="left", left_on="from", right_on="id", suffixes=(None, "_from"))
-    df = pd.merge(df, type_mapping, how="left", left_on="to", right_on="id", suffixes=(None, "_to"))
-    # TODO : make sure we get the column type_from and type_to
-
+    df = pd.merge(df, type_mapping.add_prefix("from_"), how="left", left_on="from", right_on="from_id")
+    df = pd.merge(df, type_mapping.add_prefix("to_"), how="left", left_on="to", right_on="to_id", suffixes=(None, "_to"))
+    df.drop([i for i in df.columns if "id" in i],axis=1, inplace=True)
 
     # 2. Identifier tous les types de nœuds uniques
     node_types = pd.unique(df[['from_type', 'to_type']].values.ravel('K'))
