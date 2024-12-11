@@ -18,7 +18,7 @@ def extract_node_type(node_name):
     """Extracts the node type from the node name, based on the string before the first underscore."""
     return node_name.split('_')[0]
 
-def create_hetero_data(kg, mapping):
+def create_hetero_data(kg, mapping_csv):
     df = kg.get_df()
     
     data = HeteroData()
@@ -35,6 +35,7 @@ def create_hetero_data(kg, mapping):
 
     kg_to_node_type = {}  # Mapping pour chaque ID du KG vers son type de nœud
 
+    mapping = pd.read_csv(mapping_csv, sep=",", header=1)
     type_mapping = mapping[["type","id"]] # Keep only type and id column
 
     # 1. Parser les types de nœuds et les identifiants

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  
 
 class TransEModelWithGCN(TranslationModel):
-    def __init__(self, emb_dim, n_entities, n_relations, kg, device, num_gcn_layers=2, aggr='sum', dissimilarity_type='L2'):
+    def __init__(self, emb_dim, n_entities, n_relations, kg, device, mapping_csv, num_gcn_layers=2, aggr='sum', dissimilarity_type='L2'):
         """
         Initialise le modèle TransE modifié avec un Heterogeneous GCN pour les embeddings des entités.
 
@@ -24,6 +24,8 @@ class TransEModelWithGCN(TranslationModel):
             Nombre total de relations.
         kg : KnowledgeGraph
             Objet contenant les informations du graphe de connaissances.
+        mapping_csv : str
+            CSV file path with at least two columns : type and id.
         num_gcn_layers : int, optional
             Nombre de couches de convolution GCN pour chaque type d'arête, par défaut 2.
         aggr : str, optional
@@ -40,7 +42,7 @@ class TransEModelWithGCN(TranslationModel):
         logger.info("__init_class super")
 
         self.emb_dim = emb_dim
-        self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg)
+        self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg, mapping_csv)
         self.hetero_data = self.hetero_data.to(device)
 
         # Initialisation des embeddings des relations
