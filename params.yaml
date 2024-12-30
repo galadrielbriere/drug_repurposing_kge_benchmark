@@ -1,77 +1,64 @@
-common:
-  seed: 42
-  input_csv: "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
-  # input_pkl: 
-  out: "./"
-  verbose: true
-  run_kg_prep: true
-  run_training: false
-  run_evaluation: false
+common:  # Global parameters
+  seed: 42  # Seed for reproducibility
+  input_csv: "/path/to/knowledge_graph.csv"  # Input KG file
+  out: "./results"  # Output directory for results
+  run_kg_prep: true  # Run KG preprocessing
+  run_training: false  # Train embeddings
+  run_evaluation: false  # Evaluate the model on the test set
 
-clean_kg:   
-  remove_duplicates_triplets: true 
+clean_kg:  # Preprocessing settings
+  remove_duplicates_triplets: true  # Remove duplicate triples
 
-  make_directed: true
-  make_directed_params: 
+  make_directed: true  # Make undirected relations directed
+  make_directed_params:  # Relations to make directed
     - "disease_disease"
     - "drug_drug"
     - "protein_protein"
 
-  check_synonymous_antisynonymous: true 
+  check_synonymous_antisynonymous: true  # Remove redundant or Cartesian product relations
   check_synonymous_antisynonymous_params:
-    theta1: 0.8
-    theta2: 0.8
+    theta1: 0.8  # Threshold for near-duplicate relations
+    theta2: 0.8  # Threshold for near-reverse relations
 
-  permute_kg: false
+  permute_kg: false  # Whether to permute a specific relation
+  permute_kg_params:  # Relations to permute
+    - "indication"  
 
-  clean_train_set: true
-  compute_proportions: true
+model:  # Model settings
+  name: "TransE"  # Model name (any from TorchKGE)
+  emb_dim: 400  # Embedding dimension
+  margin: 1  # Margin for translational models 
 
-  rel_swap: false # to set orpha_treatment to indication
+sampler:  # Sampling strategy
+  name: "Mixed"  # Sampler to use (Uniform, Positional, Bernouilli or Mixed)
 
-  mixed_test: true
-
-  smaller_kg: true
-  keep_relations:
-    - 'disease_disease'
-    - 'protein_protein'
-    - 'drug_drug'
-    - 'phenotype_phenotype'
-    - 'disease_protein'
-    - 'indication'
-    - 'disease_phenotype_positive'
-    - 'disease_phenotype_negative'
-    - 'drug_protein'
-    - 'orpha_treatment'
-
-model:
-  name: "TransE"               
-  emb_dim: 400
-  margin: 1                  
-
-sampler:
-  name: 'Positional'
-
-optimizer:
-  name: "Adam"
+optimizer:  # Optimizer configuration
+  name: "Adam"  # Optimizer name (any from PyTorch)
   params:
-    weight_decay: 0.001                        
+    lr: 0.001 # Learning Rate
+    weight_decay: 0.001  # Weight decay (L2 regularization)
 
-lr_scheduler:
-  type: "CosineAnnealingWarmRestarts"
+lr_scheduler:  # Learning rate scheduler
+  type: "CosineAnnealingWarmRestarts"  # Scheduler type (any from Pytorch)
   params:
-    T_0: 10
-    T_mult: 2         
+    T_0: 10  # First cycle length
+    T_mult: 2  # Multiplicative factor for cycle length
 
-training:
-  max_epochs: 2000              
-  patience: 20            
-  batch_size: 2048     
-  eval_interval: 10
-  eval_batch_size: 32
+training:  # Training parameters
+  max_epochs: 2000  # Maximum number of epochs
+  patience: 20  # Early stopping patience on validation MRR
+  batch_size: 2048  # Training batch size
+  eval_interval: 10  # Evaluation interval during training
+  eval_batch_size: 32  # Evaluation batch size
 
-evaluation:
-  made_directed_relations: ["drug_drug", "disease_disease", "protein_protein", "drug_drug_inv", "disease_disease_inv", "protein_protein_inv"]
-  target_relations: ["indication"]
-  thresholds: [10]
-
+evaluation:  # Evaluation settings
+  made_directed_relations:  # Relations made directed
+    - "drug_drug"
+    - "disease_disease"
+    - "protein_protein"
+    - "drug_drug_inv"
+    - "disease_disease_inv"
+    - "protein_protein_inv"
+  target_relations:  # Specific relations to evaluate
+    - "indication"
+  thresholds: [10]  # Thresholds for node frequencies (used for each target relation)
