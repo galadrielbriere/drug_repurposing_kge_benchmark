@@ -135,6 +135,22 @@ evaluation:  # Evaluation settings
 ```bash
 python ./dev/run_training.py --config config.yaml 
 ```
+---
+
+## Reproducing Paper Results
+
+### Knowledge Graph Availability
+
+The Knowledge Graph used in our study is available on [Zenodo](https://zenodo.org/records/14577331?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjUwNTIxYWExLWExN2QtNDIwZi05YWUyLTI2MDI0OTM5MDlmOSIsImRhdGEiOnt9LCJyYW5kb20iOiI2YTY3NjY5ZTYwNWYwYWY3ZTZhMGJjOGY1YTJjNGIzYSJ9.ZSG9I-RjKuiUqiwpY66TvPLE6wAlvj3TdhjMvUCX-jUALSvFxa7tSBZpKFAgSJxLodX9ZhKQ_hJam4zd01cKyg). This Knowledge Graph is derived directly from the [Shepherd Knowledge Graph](https://zitniklab.hms.harvard.edu/projects/SHEPHERD/), with updated node identifiers to include node type.
+
+### Configuration and Results 
+
+All configuration files used to generate the results presented in the associated paper are included in this repository. The obtained results are organized into the following directories:
+
+- **`experiment1_used_induced_DL` (DL1):** Results addressing data leakage caused by data redundancy during dataset splitting. This directory includes a subdirectory for runs with (`no_DL`) and without (`induced_DL`) DL1 control.
+- **`experiment2_structural_DL` (DL2):** Results exploring the use of node degree as illegitimate feature by KGE models (permutation experiment).
+
+Results for **DL3** (drug repurposing for rare diseases) were generated using models trained in the DL1 (`no_DL`) experiments and evaluated on a proprietary inference dataset provided by Orphanet, which cannot be shared here. 
 
 ---
 
