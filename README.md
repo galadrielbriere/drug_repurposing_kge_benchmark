@@ -13,7 +13,7 @@
 
 ## Introduction
 
-This repository focuses on evaluating and mitigating data leakage in link prediction tasks for link prediction in biomedical knowledge graphs. It includes a configurable pipeline for preprocessing, training, and evaluating popular KGE models on link prediction tasks. The project includes models from TorchKGE and PyTorch Geometric. Models are trained using PyTorch and PyTorch-Ignite.
+This repository focuses on evaluating and mitigating data leakage for link prediction in biomedical knowledge graphs. It includes a configurable pipeline for preprocessing, training, and evaluating popular KGE models on link prediction tasks. The project includes models from TorchKGE and PyTorch Geometric. Models are trained using PyTorch and PyTorch-Ignite.
 
 ---
 
@@ -147,7 +147,7 @@ The Knowledge Graph used in our study is available on [Zenodo](https://zenodo.or
 
 All configuration files used to generate the results presented in the associated paper are included in this repository. The obtained results are organized into the following directories:
 
-- **`experiment1_used_induced_DL` (DL1):** Results addressing data leakage caused by data redundancy during dataset splitting. This directory includes a subdirectory for runs with (`no_DL`) and without (`induced_DL`) DL1 control.
+- **`experiment1_user_induced_DL` (DL1):** Results addressing data leakage caused by data redundancy during dataset splitting. This directory includes a subdirectory for runs with (`no_DL`) and without (`induced_DL`) DL1 control.
 - **`experiment2_structural_DL` (DL2):** Results exploring the use of node degree as illegitimate feature by KGE models (permutation experiment).
 
 Results for **DL3** (drug repurposing for rare diseases) were generated using models trained in the DL1 (`no_DL`) experiments and evaluated on a proprietary inference dataset provided by Orphanet, which cannot be shared here. 
