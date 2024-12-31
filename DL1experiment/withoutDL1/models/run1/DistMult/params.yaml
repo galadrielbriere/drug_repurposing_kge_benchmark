@@ -1,6 +1,6 @@
 common:
   seed: 42
-  input_pkl: '/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/DL1experiment/withoutDL/kg_processing/kg.pkl'
+  input_pkl: '/lustre/fswork/projects/rech/rnk/ufq76hz/dr_benchmark/DL1experiment/withoutDL1/kg_processing/kg.pkl'
   out: './'
   run_kg_prep: false
   run_training: true
