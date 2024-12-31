@@ -175,6 +175,7 @@ class KnowledgeGraph(Dataset):
         only `share` is provided, the split is done at random but it assures
         to keep at least one fact involving each type of entity and relation
         in the training subset.
+        Does not update the dictionary of facts.
 
         Parameters
         ----------
@@ -436,7 +437,7 @@ class KnowledgeGraph(Dataset):
     def keep_triples(self, indices_to_keep):
         """
         Keeps only the specified triples in the knowledge graph and returns a new
-        KnowledgeGraph instance with these triples.
+        KnowledgeGraph instance with these triples. Updates the dictionnary of facts.
 
         Parameters
         ----------
