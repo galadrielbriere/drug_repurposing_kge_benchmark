@@ -34,6 +34,8 @@ logging.basicConfig(
 def add_inverse_relations(kg, undirected_relations):
     """
     Adds inverse triples for the specified undirected relations in the knowledge graph.
+    Updates head_idx, tail_idx, relations with the inverse triples, and updates the dictionaries to include
+    both original and inverse facts in all directions.
 
     Parameters
     ----------
@@ -45,20 +47,17 @@ def add_inverse_relations(kg, undirected_relations):
     Returns
     -------
     KnowledgeGraph, list
-        A new instance of KnowledgeGraph with the inverse triples added and a list of pairs
-        (old relation ID, new inverse relation ID).
+        The updated KnowledgeGraph with the dictionaries and tensors modified,
+        and a list of pairs (old relation ID, new inverse relation ID).
     """
 
     ix2rel = {v: k for k, v in kg.rel2ix.items()}
 
-    # Copier les indices existants pour les têtes, les queues et les relations
-    head_idx, tail_idx, relations = kg.head_idx.clone(), kg.tail_idx.clone(), kg.relations.clone()
-
-    # Liste pour stocker les nouveaux triplets inverses
-    new_head_idx, new_tail_idx, new_relations = [], [], []
-
     # Liste pour stocker les paires (ancienne relation ID, nouvelle relation inverse ID)
     reverse_list = []
+
+    # Listes pour les nouveaux triplets
+    new_head_idx, new_tail_idx, new_relations = [], [], []
 
     for relation_id in undirected_relations:
         # Créez le nom de la relation inverse
@@ -77,12 +76,37 @@ def add_inverse_relations(kg, undirected_relations):
         reverse_list.append((relation_id, inverse_relation_id))
 
         # Masque pour les triplets de la relation actuelle
-        mask = (relations == relation_id)
+        mask = (kg.relations == relation_id)
 
-        # Ajouter les triplets inverses pour les triplets existants de cette relation
-        new_head_idx.append(tail_idx[mask])
-        new_tail_idx.append(head_idx[mask])
-        new_relations.append(torch.full_like(relations[mask], inverse_relation_id))
+        # Ajouter les nouveaux triplets inverses aux tenseurs
+        new_head_idx.append(kg.tail_idx[mask])
+        new_tail_idx.append(kg.head_idx[mask])
+        new_relations.append(torch.full_like(kg.relations[mask], inverse_relation_id))
+
+        # Ajouter les faits aux dictionnaires
+        for i in range(len(mask)):
+            if mask[i]:
+                h = kg.head_idx[i].item()
+                t = kg.tail_idx[i].item()
+
+                # Ajouter le fait original dans les dictionnaires
+                kg.dict_of_heads.setdefault((t, relation_id), set()).add(h)  # (t, r) -> h
+                kg.dict_of_tails.setdefault((h, relation_id), set()).add(t)  # (h, r) -> t
+                kg.dict_of_rels.setdefault((h, t), set()).add(relation_id)  # (h, t) -> r
+
+                # Ajouter le fait inverse (b, r_inv, a) dans les dictionnaires
+                kg.dict_of_heads.setdefault((h, inverse_relation_id), set()).add(t)  # (h, r_inv) -> t
+                kg.dict_of_tails.setdefault((t, inverse_relation_id), set()).add(h)  # (t, r_inv) -> h
+                kg.dict_of_rels.setdefault((t, h), set()).add(inverse_relation_id)  # (t, h) -> r_inv
+
+                # Ajouter les combinaisons supplémentaires (b, r, a) et (a, r_inv, b)
+                kg.dict_of_heads.setdefault((t, relation_id), set()).add(h)  # (t, r) -> h
+                kg.dict_of_tails.setdefault((h, relation_id), set()).add(t)  # (h, r) -> t
+                kg.dict_of_rels.setdefault((t, h), set()).add(relation_id)  # (t, h) -> r
+
+                kg.dict_of_heads.setdefault((h, inverse_relation_id), set()).add(t)  # (h, r_inv) -> t
+                kg.dict_of_tails.setdefault((t, inverse_relation_id), set()).add(h)  # (t, r_inv) -> h
+                kg.dict_of_rels.setdefault((h, t), set()).add(inverse_relation_id)  # (h, t) -> r_inv
 
     # Concaténer les nouveaux triplets inverses aux triplets existants
     if new_head_idx:
@@ -90,14 +114,76 @@ def add_inverse_relations(kg, undirected_relations):
         kg.tail_idx = torch.cat((kg.tail_idx, *new_tail_idx), dim=0)
         kg.relations = torch.cat((kg.relations, *new_relations), dim=0)
 
-    # Créer une nouvelle instance de KnowledgeGraph avec les données mises à jour
-    kg = KnowledgeGraph(
-        kg={'heads': kg.head_idx, 'tails': kg.tail_idx, 'relations': kg.relations},
-        ent2ix=kg.ent2ix,
-        rel2ix=kg.rel2ix
-    )
-
     return kg, reverse_list
+
+
+# def add_inverse_relations(kg, undirected_relations):
+#     """
+#     Adds inverse triples for the specified undirected relations in the knowledge graph.
+#     Updates the dictionary of facts. TODO: add the rev in the dict of facts.
+#     Parameters
+#     ----------
+#     kg : KnowledgeGraph
+#         The original knowledge graph.
+#     undirected_relations: list
+#         List of undirected relations for which inverse triples should be added.
+
+#     Returns
+#     -------
+#     KnowledgeGraph, list
+#         A new instance of KnowledgeGraph with the inverse triples added and a list of pairs
+#         (old relation ID, new inverse relation ID).
+#     """
+
+#     ix2rel = {v: k for k, v in kg.rel2ix.items()}
+
+#     # Copier les indices existants pour les têtes, les queues et les relations
+#     head_idx, tail_idx, relations = kg.head_idx.clone(), kg.tail_idx.clone(), kg.relations.clone()
+
+#     # Liste pour stocker les nouveaux triplets inverses
+#     new_head_idx, new_tail_idx, new_relations = [], [], []
+
+#     # Liste pour stocker les paires (ancienne relation ID, nouvelle relation inverse ID)
+#     reverse_list = []
+
+#     for relation_id in undirected_relations:
+#         # Créez le nom de la relation inverse
+#         inverse_relation = f"{ix2rel[relation_id]}_inv"
+
+#         # Vérifiez si la relation existe dans le graphe
+#         if relation_id not in kg.rel2ix.values():
+#             logging.info(f"Relation {relation_id} non trouvée dans le graphe de connaissances. Skipping...")
+#             continue
+
+#         # Obtenir l'ID de la relation et créer un nouvel ID pour la relation inverse
+#         inverse_relation_id = len(kg.rel2ix)
+#         kg.rel2ix[inverse_relation] = inverse_relation_id
+
+#         # Ajouter la paire (ancienne relation ID, nouvelle relation inverse ID) à la liste
+#         reverse_list.append((relation_id, inverse_relation_id))
+
+#         # Masque pour les triplets de la relation actuelle
+#         mask = (relations == relation_id)
+
+#         # Ajouter les triplets inverses pour les triplets existants de cette relation
+#         new_head_idx.append(tail_idx[mask])
+#         new_tail_idx.append(head_idx[mask])
+#         new_relations.append(torch.full_like(relations[mask], inverse_relation_id))
+
+#     # Concaténer les nouveaux triplets inverses aux triplets existants
+#     if new_head_idx:
+#         kg.head_idx = torch.cat((kg.head_idx, *new_head_idx), dim=0)
+#         kg.tail_idx = torch.cat((kg.tail_idx, *new_tail_idx), dim=0)
+#         kg.relations = torch.cat((kg.relations, *new_relations), dim=0)
+
+#     # Créer une nouvelle instance de KnowledgeGraph avec les données mises à jour
+#     kg = KnowledgeGraph(
+#         kg={'heads': kg.head_idx, 'tails': kg.tail_idx, 'relations': kg.relations},
+#         ent2ix=kg.ent2ix,
+#         rel2ix=kg.rel2ix
+#     )
+
+#     return kg, reverse_list
 
 def compute_triplet_proportions(kg_train, kg_test, kg_val):
     """
@@ -147,6 +233,7 @@ def permute_tails(kg, relation_id):
     """
     Randomly permutes the `tails` for a given relation while maintaining the original degree
     of `heads` and `tails`, ensuring there are no triples of the form (a, rel, a) where `head == tail`.
+    Updates the dictionary of facts.
 
     Parameters
     ----------
