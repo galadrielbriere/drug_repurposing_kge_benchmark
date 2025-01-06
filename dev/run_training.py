@@ -519,7 +519,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     run_training = config['common'].get('run_training', True)
     plot_training_metrics = config['common'].get('plot_training_metrics', True)
     run_eval = config['common'].get('run_evaluation', True)
-    run_inference = config['common'].get('run_inference', True)
+    run_inference = config['common'].get('run_inference', False)
 
     #################
     # Initialization

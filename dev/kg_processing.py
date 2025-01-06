@@ -94,7 +94,7 @@ def prepare_knowledge_graph(config):
     """Prepare and clean the knowledge graph."""
     # Load knowledge graph
     input_file = config["common"]['input_csv']
-    kg_df = pd.read_csv(input_file, sep="\t")[["from", "to", "rel"]]
+    kg_df = pd.read_csv(input_file, sep="\t", usecols=["from", "to", "rel"]) # QUESTION : \t or , ?
 
     if config.get("clean_kg", {}).get("smaller_kg", False):
         logging.info(f"Keeping only relations {config['clean_kg']['keep_relations']}")
