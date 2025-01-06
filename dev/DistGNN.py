@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  
 
 class DistMultModelWithGCN(BilinearModel):
-    def __init__(self, emb_dim, n_entities, n_relations, kg, device, num_gcn_layers=2, aggr='sum'):
+    def __init__(self, emb_dim, n_entities, n_relations, kg, device, mapping_csv, num_gcn_layers=2, aggr='sum'):
         """
         Initialise le modèle TransE modifié avec un Heterogeneous GCN pour les embeddings des entités.
 
@@ -30,7 +30,7 @@ class DistMultModelWithGCN(BilinearModel):
         """
         super().__init__(emb_dim, n_entities, n_relations) ###
 
-        self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg)
+        self.hetero_data, self.kg2het, self.het2kg, _, self.kg2nodetype = create_hetero_data(kg, mapping_csv)
         self.hetero_data = self.hetero_data.to(device)
 
         # Initialisation des embeddings des relations
