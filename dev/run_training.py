@@ -199,11 +199,11 @@ def initialize_model(config, kg_train, device):
             criterion = BinaryCrossEntropyLoss()
 
         case "TransEModelWithGCN":
-            model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, config["mapping_csv"], kg_train, device, num_gcn_layers=1)
+            model = TransGNN.TransEModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, config["common"]["mapping_csv"], kg_train, device, num_gcn_layers=1)
             criterion = MarginLoss(margin)
 
         case "DistMultModelWithGCN":
-            model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, config["mapping_csv"], num_gcn_layers=1)
+            model = DistGNN.DistMultModelWithGCN(emb_dim, kg_train.n_ent, kg_train.n_rel, kg_train, device, config["common"]["mapping_csv"], num_gcn_layers=1)
             criterion = BinaryCrossEntropyLoss()
 
         case _:
