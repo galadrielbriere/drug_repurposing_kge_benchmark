@@ -47,6 +47,7 @@ from kg_processing import (
 from my_knowledge_graph import KnowledgeGraph
 from mixed_sampler import MixedNegativeSampler
 from positional_sampler import PositionalNegativeSampler
+from model_mapper import ModelMapper
 
 def main(args):
 
@@ -363,7 +364,7 @@ def find_best_model(dir):
 def link_pred(model, kg, batch_size):
     """Link prediction evaluation on test set."""
     # Test MRR measure
-    evaluator = LinkPredictionEvaluator(model, kg)
+    evaluator = LinkPredictionEvaluator(model.decoder, kg)
     evaluator.evaluate(b_size=batch_size, verbose=True)
     
     test_mrr = evaluator.mrr()[1]
@@ -532,8 +533,9 @@ def train_model(kg_train, kg_val, kg_test, config):
 
     logging.info('Initializing model...')
     # Initialize model
-    model, criterion = initialize_model(config, kg_train, device)
-    optimizer = initialize_optimizer(model, config)
+    model = ModelMapper(config, kg_train, device)
+    #model, criterion = initialize_model(config, kg_train, device)
+    optimizer = initialize_optimizer(model.decoder, config)
 
     logging.info('Initializing sampler...')
     # Initialize sampler
@@ -587,7 +589,7 @@ def train_model(kg_train, kg_val, kg_test, config):
 
         # Calcul de la perte avec les triplets positifs et négatifs
         pos, neg = model(h, t, r, n_h, n_t)
-        loss = criterion(pos, neg)
+        loss = model.criterion(pos, neg)
         loss.backward()
         
         # Mise à jour des paramètres de l'optimizer
@@ -643,9 +645,9 @@ def train_model(kg_train, kg_val, kg_test, config):
     @trainer.on(Events.EPOCH_COMPLETED(every=eval_interval))
     def evaluate(engine):
         logging.info(f"Evaluating on validation set at epoch {engine.state.epoch}...")
-        model.eval()  # Met le modèle en mode évaluation
+        model.decoder.eval()  # Met le modèle en mode évaluation
         with torch.no_grad():
-            val_mrr = link_pred(model, kg_val, eval_batch_size) 
+            val_mrr = link_pred(model.decoder, kg_val, eval_batch_size) 
         engine.state.metrics['val_mrr'] = val_mrr 
         logging.info(f"Validation MRR: {val_mrr}")
 
@@ -653,7 +655,7 @@ def train_model(kg_train, kg_val, kg_test, config):
             scheduler.step(val_mrr)
             logging.info('Stepping scheduler ReduceLROnPlateau.')
 
-        model.train()  # Remet le modèle en mode entraînement
+        model.decoder.train()  # Remet le modèle en mode entraînement
 
     ##### Scheduler update
     @trainer.on(Events.EPOCH_COMPLETED)
@@ -813,7 +815,7 @@ def train_model(kg_train, kg_val, kg_test, config):
     if run_eval or run_inference:
         model.to("cpu")
         del model
-        model = None
+        #model = None
         torch.cuda.empty_cache()    
         gc.collect()
 
@@ -894,7 +896,7 @@ def train_model(kg_train, kg_val, kg_test, config):
             orpha_df= pd.read_csv(run_inference, sep="\t")
             orpha_kg = KnowledgeGraph(df = orpha_df, ent2ix=kg_train.ent2ix, rel2ix=kg_train.rel2ix) 
             
-            evaluator = LinkPredictionEvaluator(new_model, orpha_kg)
+            evaluator = LinkPredictionEvaluator(new_model.decoder, orpha_kg)
             evaluator.evaluate(b_size=eval_batch_size, verbose=True)
                 
             inference_mrr = evaluator.mrr()[1]
