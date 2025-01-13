@@ -14,7 +14,7 @@ logger.setLevel(logging.INFO)
 # Translational Models
 # kwargs are used when models can accept arguments other than the base n_entities and n_relations.
 class TransE(TranslationModel):
-    def __init__(self, n_entities, n_relations, **kwargs):
+    def __init__(self, _, n_entities, n_relations, **kwargs):
         super().__init__(n_entities, n_relations, dissimilarity_type=kwargs.get("dissimilarity_type", "L2"))
 
     def score(self, h_norm, r_emb, t_norm):
@@ -68,10 +68,8 @@ class TransE(TranslationModel):
         return h, t, r, candidates
 
 class TransH(TranslationModel, ModelMapper):
-    def __init__(self, n_entities, n_relations, **kwargs):
+    def __init__(self, emb_dim, n_entities, n_relations, **kwargs):
         super().__init__(n_entities, n_relations, dissimilarity_type="L2")
-        
-        emb_dim = kwargs.get("emb_dim",100)
         self.norm_vect = my_init_embedding(n_relations, emb_dim)
 
         self.evaluated_projections = False

@@ -9,6 +9,7 @@ from torchkge.utils import MarginLoss, BinaryCrossEntropyLoss
 from torchkge.models import Model
 
 import encoders
+import decoders
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  
@@ -45,12 +46,12 @@ class ModelMapper(Model):
         match decoder_name:
             # Translational models
             case 'TransE':
-                self.decoder = torchkge.models.TransEModel(emb_dim, self.n_ent, self.n_rel,
+                self.decoder = decoders.TransE(emb_dim, self.n_ent, self.n_rel,
                                                     dissimilarity_type=dissimilarity)
                 self.criterion = MarginLoss(margin)
 
             case 'TransH':
-                self.decoder = torchkge.models.TransHModel(emb_dim, self.n_ent, self.n_rel)
+                self.decoder = decoders.TransH(emb_dim, self.n_ent, self.n_rel)
                 self.criterion = MarginLoss(margin)
 
             case 'TransR':

@@ -48,7 +48,8 @@ clean_kg:
     - 'orpha_treatment'
 
 model:
-  name: "TransE"               
+  encoder: "default"
+  decoder: "TransE"              
   emb_dim: 400
   margin: 1                  
 
