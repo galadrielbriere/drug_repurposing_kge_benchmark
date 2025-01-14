@@ -5,7 +5,7 @@ from torchkge.models import TranslationModel, BilinearModel
 import torch
 import logging
 
-from model_mapper import ModelMapper
+import model_mapper
 from utils import my_init_embedding
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class TransE(TranslationModel):
         
         return h, t, r, candidates
 
-class TransH(TranslationModel, ModelMapper):
+class TransH(TranslationModel, model_mapper.ModelMapper):
     def __init__(self, emb_dim, n_entities, n_relations, **kwargs):
         super().__init__(n_entities, n_relations, dissimilarity_type="L2")
         self.norm_vect = my_init_embedding(n_relations, emb_dim)
