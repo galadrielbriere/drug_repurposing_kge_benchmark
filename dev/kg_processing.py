@@ -146,6 +146,11 @@ def clean_knowledge_graph(kg, config):
             logging.info(f'Adding {len(rev_duplicates_relations)} anti-synonymous relations ({[id_to_rel_name[rel] for rel in rev_duplicates_relations]}) to the list of known duplicated relations.')
             duplicated_relations_list.extend(rev_duplicates_relations)
     
+        theta = config['clean_kg']['check_synonymous_antisynonymous_params']['theta']
+        cartesian_rels = my_data_redundancy.cartesian_product_relations(kg, theta=theta)
+        if cartesian_rels:
+            logging.info(f'Adding {len(cartesian_rels)} Cartesian product relations ({[id_to_rel_name[rel] for rel in cartesian_rels]}) to the list of known Cartesian product relations.')
+
     if config['clean_kg']["permute_kg"]:
         to_permute_relation_names = config['clean_kg']["permute_kg_params"]
         if len(to_permute_relation_names) > 1:
@@ -179,6 +184,9 @@ def clean_knowledge_graph(kg, config):
         kg_train = my_data_redundancy.clean_datasets(kg_train, kg_val, known_reverses=duplicated_relations_list)
         logging.info("Step 2: with respect to test set.")
         kg_train = my_data_redundancy.clean_datasets(kg_train, kg_test, known_reverses=duplicated_relations_list)
+        if cartesian_rels:
+            kg_train, kg_test = my_data_redundancy.clean_cartesians(kg_train, kg_test, cartesian_rels)
+
 
     kg_train_ok, _ = verify_entity_coverage(kg_train, kg)
     if not kg_train_ok:

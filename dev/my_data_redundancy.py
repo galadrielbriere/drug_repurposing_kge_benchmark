@@ -682,3 +682,87 @@ def cartesian_product_relations(kg, theta=0.8):
             selected_relations.append(r_)
 
     return selected_relations
+
+def clean_cartesians(kg1, kg2, known_cartesian, entity_type='head'):
+    """
+    Transfer cartesian product triplets from training set to test set to prevent data leakage.
+    For each entity (head or tail) involved in a cartesian product relation in the test set,
+    all corresponding triplets in the training set are moved to the test set.
+    
+    Parameters
+    ----------
+    kg1 : KnowledgeGraph
+        Training set knowledge graph to be cleaned.
+        Will be modified by removing cartesian product triplets.
+    kg2 : KnowledgeGraph
+        Test set knowledge graph to be augmented.
+        Will receive the transferred cartesian product triplets.
+    known_cartesian : list
+        List of relation indices that represent cartesian product relationships.
+        These are relations where if (h,r,t1) exists, then (h,r,t2) likely exists
+        for many other tail entities t2 (or vice versa for tail-based cartesian products).
+    entity_type : str, optional
+        Either 'head' or 'tail' to specify which entity type to consider for cartesian products.
+        Default is 'head'.
+    
+    Returns
+    -------
+    tuple (KnowledgeGraph, KnowledgeGraph)
+        A pair of (cleaned_train_kg, augmented_test_kg) where:
+        - cleaned_train_kg: Training KG with cartesian triplets removed
+        - augmented_test_kg: Test KG with the transferred triplets added
+    """
+    assert entity_type in ['head', 'tail'], "entity_type must be either 'head' or 'tail'"
+    
+    for r in known_cartesian:
+        # Find all entities in test set that participate in the cartesian relation
+        mask = (kg2.relations == r)
+        if entity_type == 'head':
+            cartesian_entities = kg2.head_idx[mask].view(-1,1)
+            # Find matching triplets in training set with same head and relation
+            all_indices_to_move = []
+            for entity in cartesian_entities:
+                mask = (kg1.head_idx == entity) & (kg1.relations == r)
+                indices = mask.nonzero().squeeze()
+                if indices.dim() == 0:
+                    indices = indices.unsqueeze(0)
+                all_indices_to_move.extend(indices.tolist())
+        else:  # tail
+            cartesian_entities = kg2.tail_idx[mask].view(-1,1)
+            # Find matching triplets in training set with same tail and relation
+            all_indices_to_move = []
+            for entity in cartesian_entities:
+                mask = (kg1.tail_idx == entity) & (kg1.relations == r)
+                indices = mask.nonzero().squeeze()
+                if indices.dim() == 0:
+                    indices = indices.unsqueeze(0)
+                all_indices_to_move.extend(indices.tolist())
+            
+        if all_indices_to_move:
+            # Extract the triplets to be transferred
+            triplets_to_move = torch.stack([
+                kg1.head_idx[all_indices_to_move],
+                kg1.relations[all_indices_to_move],
+                kg1.tail_idx[all_indices_to_move]
+            ], dim=1)
+            
+            # Remove identified triplets from training set
+            kg1 = kg1.remove_triples(torch.tensor(all_indices_to_move, dtype=torch.long))
+            
+            # Add transferred triplets to test set while preserving KG structure
+            kg2_dict = {
+                'heads': torch.cat([kg2.head_idx, triplets_to_move[:, 0]]),
+                'tails': torch.cat([kg2.tail_idx, triplets_to_move[:, 2]]),
+                'relations': torch.cat([kg2.relations, triplets_to_move[:, 1]]),
+            }
+            
+            kg2 = KnowledgeGraph(
+                kg=kg2_dict,
+                ent2ix=kg2.ent2ix,
+                rel2ix=kg1.rel2ix,
+                dict_of_heads=kg2.dict_of_heads,
+                dict_of_tails=kg2.dict_of_tails,
+                dict_of_rels=kg2.dict_of_rels
+            )
+            
+    return kg1, kg2
