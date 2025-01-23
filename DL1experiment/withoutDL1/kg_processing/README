@@ -1,1 +1,1 @@
-python /home/galadriel/dr_benchmark/dev/run_training.py --config /home/galadriel/dr_benchmark/DL1experiment/withoutDL1/kg_processing/params.yaml 2>&1 | tee /home/galadriel/dr_benchmark/DL1experiment/withoutDL1/kg_processing/out.log
+python $WORK/dev/run_training.py --config cd $WORK/DL1experiment/withoutDL1/kg_processing/params.yaml 2>&1 | tee cd $WORK/DL1experiment/withoutDL1/kg_processing/out.log

@@ -134,19 +134,20 @@ def clean_knowledge_graph(kg, config):
 
     duplicated_relations_list = []
 
-    if config['clean_kg']['check_synonymous_antisynonymous']:
-        logging.info("Checking for synonymous and antisynonymous relations...")
-        theta1 = config['clean_kg']['check_synonymous_antisynonymous_params']['theta1']
-        theta2 = config['clean_kg']['check_synonymous_antisynonymous_params']['theta2']
+    if config['clean_kg']['check_DL1']:
+        logging.info("Checking for semantically redundant and Cartesian product relations...")
+        theta1 = config['clean_kg']['check_DL1_params']['theta1']
+        theta2 = config['clean_kg']['check_DL1_params']['theta2']
+
         duplicates_relations, rev_duplicates_relations = my_data_redundancy.duplicates(kg, theta1=theta1, theta2=theta2)
         if duplicates_relations:
-            logging.info(f'Adding {len(duplicates_relations)} synonymous relations ({[id_to_rel_name[rel] for rel in duplicates_relations]}) to the list of known duplicated relations.')
+            logging.info(f'Adding {len(duplicates_relations)} near-duplicate relations ({[id_to_rel_name[rel] for rel in duplicates_relations]}) to the list of known redundant relations.')
             duplicated_relations_list.extend(duplicates_relations)
         if rev_duplicates_relations:
-            logging.info(f'Adding {len(rev_duplicates_relations)} anti-synonymous relations ({[id_to_rel_name[rel] for rel in rev_duplicates_relations]}) to the list of known duplicated relations.')
+            logging.info(f'Adding {len(rev_duplicates_relations)} near-reverse-duplicate relations ({[id_to_rel_name[rel] for rel in rev_duplicates_relations]}) to the list of known redundant relations.')
             duplicated_relations_list.extend(rev_duplicates_relations)
-    
-        theta = config['clean_kg']['check_synonymous_antisynonymous_params']['theta']
+
+        theta = config.get("clean_kg", {}).get("check_DL1_params", {}).get("theta", 0.8)
         cartesian_rels = my_data_redundancy.cartesian_product_relations(kg, theta=theta)
         if cartesian_rels:
             logging.info(f'Adding {len(cartesian_rels)} Cartesian product relations ({[id_to_rel_name[rel] for rel in cartesian_rels]}) to the list of known Cartesian product relations.')
@@ -165,8 +166,8 @@ def clean_knowledge_graph(kg, config):
         logging.info(f'Adding reverse triplets for relations {relation_names}...')
         kg, undirected_relations_list = my_data_redundancy.add_inverse_relations(kg, [kg.rel2ix[key] for key in undirected_relations_names])
             
-        if config['clean_kg']['check_synonymous_antisynonymous']:
-            logging.info(f'Adding created reverses {[rel for rel in undirected_relations_names]} to the list of known duplicated relations.')
+        if config['clean_kg']['check_DL1']:
+            logging.info(f'Adding created reverses {[rel for rel in undirected_relations_names]} to the list of known redundant relations.')
             duplicated_relations_list.extend(undirected_relations_list)
 
     logging.info("Splitting the dataset into train, validation and test sets...")

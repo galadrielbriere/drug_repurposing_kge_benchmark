@@ -1,7 +1,7 @@
 common:
   seed: 42
-  input_csv: "/home/galadriel/dr_benchmark/knowledge_graph/shep_kg_without_orphan_treatments.csv"
-  out: "/home/galadriel/dr_benchmark/DL1experiment/withDL1/kg_processing/"
+  input_csv: "$WORK/knowledge_graph/shep_kg_without_orphan_treatments.csv"
+  out: "$WORK/DL1experiment/withDL1/kg_processing/"
   run_kg_prep: true
   run_training: false
   run_evaluation: false

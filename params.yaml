@@ -5,6 +5,7 @@ common:  # Global parameters
   run_kg_prep: true  # Run KG preprocessing
   run_training: false  # Train embeddings
   run_evaluation: false  # Evaluate the model on the test set
+  run_inference: '/path/to/inference_set.tsv' # If specified, will run the evaluation on the inference set
 
 clean_kg:  # Preprocessing settings
   remove_duplicates_triplets: true  # Remove duplicate triples
@@ -15,10 +16,13 @@ clean_kg:  # Preprocessing settings
     - "drug_drug"
     - "protein_protein"
 
-  check_synonymous_antisynonymous: true  # Remove redundant or Cartesian product relations
-  check_synonymous_antisynonymous_params:
-    theta1: 0.8  # Threshold for near-duplicate relations
-    theta2: 0.8  # Threshold for near-reverse relations
+  check_DL1: true  # Detect redundant or Cartesian product relations
+  check_DL1_params:
+    theta1: 0.8  # For near-duplicate and near-reverse-duplicate relations
+    theta2: 0.8  # For near-duplicate and near-reverse_duplicate relations
+    theta: 0.8 # Threshold for cartesian product relations
+
+  clean_train_set: true # Control for DL1 when splitting the KG into train/validation/test sets
 
   permute_kg: false  # Whether to permute a specific relation
   permute_kg_params:  # Relations to permute
